@@ -67,6 +67,9 @@ class QuoteController extends Controller
             'Cache-Control' => 'private, max-age=0, must-revalidate',
             'X-Robots-Tag' => 'noindex, nofollow',
             'X-Quote-Form' => $quoteForm->slug,
+            // สถานะลายเซ็นพนักงานขาย (cached / downloaded / download-failed … ) ไว้ตรวจปัญหาบนเซิร์ฟเวอร์ด้วย curl -I
+            'X-Quote-Signature' => $this->pdf->signatureStatus,
+            'X-Quote-Cache' => $this->pdf->lastRenderWasCached ? 'hit' : 'miss',
         ]);
     }
 

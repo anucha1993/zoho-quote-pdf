@@ -53,10 +53,14 @@ class QuotePdfService
 
         if (is_file($path) && filesize($path) > 0) {
             Log::channel('zoho')->debug('PDF cache hit', ['quote' => $quote->id(), 'form' => $form->slug, 'path' => basename($path)]);
+            $this->lastRenderWasCached = true;
+            // สถานะลายเซ็นตอน cache hit: มีไฟล์ cache ของลายเซ็นหรือไม่
+            $this->signatureStatus = $this->salesSignaturePath($quote) ? 'cached' : $this->signatureStatus;
 
             return $path;
         }
 
+        $this->lastRenderWasCached = false;
         $binary = $this->render($quote, $form);
 
         $dir = dirname($path);
@@ -259,24 +263,38 @@ class QuotePdfService
      * path รูปลายเซ็นพนักงานขาย: ดาวน์โหลดจาก Zoho Files API ครั้งแรกแล้วเก็บที่ storage/app/signatures/{File_Id}
      * คืน null เมื่อไม่มีรูป หรือดาวน์โหลดไม่ได้ (เช่น ยังไม่มี scope ZohoCRM.Files.READ) → ฟอร์มแสดงช่องว่างตามปกติ
      */
+    /** สถานะลายเซ็นพนักงานขายของการ render ล่าสุด (ส่งเป็น header X-Quote-Signature เพื่อวินิจฉัยบนเซิร์ฟเวอร์) */
+    public string $signatureStatus = 'none';
+
+    /** request ล่าสุดใช้ไฟล์ PDF จาก cache หรือไม่ (header X-Quote-Cache) */
+    public bool $lastRenderWasCached = false;
+
     public function salesSignaturePath(QuoteData $quote): ?string
     {
         $fileId = $quote->salesSignatureFileId();
 
         if ($fileId === null || ! preg_match('/^[A-Za-z0-9_-]+$/', $fileId)) {
+            $this->signatureStatus = $quote->employee === null ? 'no-staff-record' : 'no-image-field';
+
             return null;
         }
 
         $dir = storage_path('app/signatures');
         foreach (glob($dir.DIRECTORY_SEPARATOR.$fileId.'.*') ?: [] as $existing) {
+            $this->signatureStatus = 'cached';
+
             return $existing;
         }
 
         $file = $this->zoho->downloadFile($fileId);
 
         if ($file === null) {
+            $this->signatureStatus = 'download-failed (check scope ZohoCRM.Files.READ / token / zoho log)';
+
             return null;
         }
+
+        $this->signatureStatus = 'downloaded';
 
         $ext = match (true) {
             str_contains($file['type'], 'png') => 'png',
@@ -290,7 +308,13 @@ class QuotePdfService
         }
 
         $path = $dir.DIRECTORY_SEPARATOR.$fileId.'.'.$ext;
-        file_put_contents($path, $file['body']);
+
+        if (@file_put_contents($path, $file['body']) === false) {
+            $this->signatureStatus = 'write-failed (storage/app/signatures not writable)';
+            Log::channel('zoho')->error('Cannot write signature cache', ['path' => $path]);
+
+            return null;
+        }
 
         Log::channel('zoho')->info('Sales signature cached', ['file_id' => $fileId, 'bytes' => strlen($file['body'])]);
 
