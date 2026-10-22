@@ -37,6 +37,10 @@
             </td>
             <td class="nopad" style="width: 2.9%;"></td>
             <td class="sig-box f16" style="width: 32.5%;">
+                @if(!empty($salesSignature) && is_file($salesSignature))
+                    {{-- ลายเซ็นพนักงานขายจาก Staffs.Image Sign วางเหนือเส้นลงนาม --}}
+                    <div style="margin-bottom: -6pt;"><img src="{{ $salesSignature }}" style="height: {{ $approver['signature_height_pt'] ?? 34 }}pt;"></div>
+                @endif
                 <div>(<span class="sig-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>)</div>
                 {{-- ( ${Quotes.ชื่อจริง} ${Quotes.นามสกุล} ) --}}
                 <div class="b">( {{ $q->salesFullName() ?: '&nbsp;' }} )</div>

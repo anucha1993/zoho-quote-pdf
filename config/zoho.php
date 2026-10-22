@@ -137,6 +137,9 @@ return [
             'employee_lookup' => env('ZOHO_FIELD_EMPLOYEE_LOOKUP', 'Sales_Code'),
             'employee_module' => env('ZOHO_EMPLOYEE_MODULE', 'Staffs'),
             'employee_nickname' => env('ZOHO_FIELD_EMPLOYEE_NICKNAME', 'Nickname'),
+            // image upload field "Image Sign" ใน Staffs → ลายเซ็นพนักงานขายในกล่อง "ฝ่ายการตลาด/ผู้เสนอขาย"
+            // (ดาวน์โหลดผ่าน Files API ต้องมี scope ZohoCRM.Files.READ)
+            'employee_signature' => env('ZOHO_FIELD_EMPLOYEE_SIGNATURE', 'Image_Sing'),
             // ${Quotes.เงื่อนไข และรายละเอียการชำระเงิน}  (ถ้าว่างจะใช้ Terms_and_Conditions)
             'payment_terms' => env('ZOHO_FIELD_PAYMENT_TERMS', 'field7'),
             // ${Quotes.ISO}  รหัสแบบฟอร์ม (picklist, ถ้าว่างจะใช้ config quote.form_code)

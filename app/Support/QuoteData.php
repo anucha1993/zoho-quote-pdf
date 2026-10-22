@@ -224,6 +224,25 @@ class QuoteData
     }
 
     /**
+     * File_Id__s ของรูปลายเซ็นพนักงานขาย (image upload field "Image Sign" ใน module Staffs ผ่าน lookup รหัสพนักงาน)
+     * null = ไม่มีรูป
+     */
+    public function salesSignatureFileId(): ?string
+    {
+        $field = $this->custom['employee_signature'] ?? 'Image_Sing';
+        $value = $this->employee[$field] ?? null;
+
+        if (is_array($value)) {
+            $first = $value[0] ?? null;
+            $fileId = is_array($first) ? ($first['File_Id__s'] ?? null) : null;
+
+            return is_string($fileId) && $fileId !== '' ? $fileId : null;
+        }
+
+        return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    /**
      * ${Quotes.ชื่อจริง} ${Quotes.นามสกุล} ${Lookup:รหัสพนักงาน.ชื่อเล่น}
      * ถ้า custom field ว่างทั้งหมด ใช้ชื่อ Owner
      */

@@ -252,6 +252,39 @@ class ZohoCrmService
     }
 
     /**
+     * ดาวน์โหลดไฟล์จาก Files API ด้วย File_Id__s (เช่น รูปใน image upload field "Image Sign" ของ Staffs)
+     * ต้องมี scope ZohoCRM.Files.READ — คืน null ถ้าดาวน์โหลดไม่ได้ (log ไว้ ไม่ทำให้เอกสารล้ม)
+     *
+     * @return array{body: string, type: string}|null
+     */
+    public function downloadFile(string $fileId): ?array
+    {
+        if ($fileId === '') {
+            return null;
+        }
+
+        try {
+            $response = $this->request('get', "/crm/{$this->version()}/files", ['id' => $fileId]);
+        } catch (ZohoApiException $e) {
+            return null;
+        }
+
+        $type = (string) $response->header('Content-Type');
+
+        if (! $response->successful() || $response->body() === '' || str_starts_with($type, 'application/json')) {
+            $this->log('warning', 'File download failed', [
+                'file_id' => $fileId,
+                'status' => $response->status(),
+                'body' => $this->safeBody($response),
+            ]);
+
+            return null;
+        }
+
+        return ['body' => $response->body(), 'type' => $type];
+    }
+
+    /**
      * แนบไฟล์ PDF กลับเข้า Quote เป็น Attachment
      *
      * @return array<string, mixed> ข้อมูล attachment ที่สร้าง (id ฯลฯ)

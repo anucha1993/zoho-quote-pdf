@@ -97,6 +97,8 @@ class QuotePdfService
             'texts' => array_merge(config('quote.texts'), $form->option('texts', [])),
             'doc' => array_merge(config('quote.document'), $form->option('document', [])),
             'formCode' => $form->option('form_code', config('quote.form_code')),
+            // รูปลายเซ็นพนักงานขาย (ดาวน์โหลดจาก Staffs.Image_Sing แล้ว cache ไว้) — null ถ้าไม่มี/ดาวน์โหลดไม่ได้
+            'salesSignature' => $this->salesSignaturePath($quote),
             'trackingUrl' => config('quote.show_qr') ? QuoteLink::url($quote->id(), form: $form->slug) : null,
         ])->render();
 
@@ -247,7 +249,52 @@ class QuotePdfService
     {
         $form ??= QuoteForm::default();
 
-        return "quote:{$quote->id()}:{$quote->modifiedTime()}:{$form->slug}:".$this->templateVersion($form);
+        // รวม File_Id ของลายเซ็นพนักงานขายด้วย → เปลี่ยนรูปใน Staffs แล้ว PDF ถูกสร้างใหม่
+        $sig = $quote->salesSignatureFileId() ?? '-';
+
+        return "quote:{$quote->id()}:{$quote->modifiedTime()}:{$form->slug}:{$sig}:".$this->templateVersion($form);
+    }
+
+    /**
+     * path รูปลายเซ็นพนักงานขาย: ดาวน์โหลดจาก Zoho Files API ครั้งแรกแล้วเก็บที่ storage/app/signatures/{File_Id}
+     * คืน null เมื่อไม่มีรูป หรือดาวน์โหลดไม่ได้ (เช่น ยังไม่มี scope ZohoCRM.Files.READ) → ฟอร์มแสดงช่องว่างตามปกติ
+     */
+    public function salesSignaturePath(QuoteData $quote): ?string
+    {
+        $fileId = $quote->salesSignatureFileId();
+
+        if ($fileId === null || ! preg_match('/^[A-Za-z0-9_-]+$/', $fileId)) {
+            return null;
+        }
+
+        $dir = storage_path('app/signatures');
+        foreach (glob($dir.DIRECTORY_SEPARATOR.$fileId.'.*') ?: [] as $existing) {
+            return $existing;
+        }
+
+        $file = $this->zoho->downloadFile($fileId);
+
+        if ($file === null) {
+            return null;
+        }
+
+        $ext = match (true) {
+            str_contains($file['type'], 'png') => 'png',
+            str_contains($file['type'], 'gif') => 'gif',
+            str_contains($file['type'], 'jpeg'), str_contains($file['type'], 'jpg') => 'jpg',
+            default => (preg_match('/^\x89PNG/', $file['body']) ? 'png' : 'jpg'),
+        };
+
+        if (! is_dir($dir)) {
+            mkdir($dir, 0775, true);
+        }
+
+        $path = $dir.DIRECTORY_SEPARATOR.$fileId.'.'.$ext;
+        file_put_contents($path, $file['body']);
+
+        Log::channel('zoho')->info('Sales signature cached', ['file_id' => $fileId, 'bytes' => strlen($file['body'])]);
+
+        return $path;
     }
 
     /**

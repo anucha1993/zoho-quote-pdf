@@ -278,6 +278,51 @@ class QuotePdfTest extends TestCase
         $this->assertGreaterThanOrEqual(3, preg_match_all('/\/Type\s*\/Page[^s]/', $pdf));
     }
 
+    public function test_sales_signature_is_downloaded_from_files_api_and_cached(): void
+    {
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
+        $fileId = 'u1testfileid123';
+        @unlink(storage_path('app/signatures/'.$fileId.'.png'));
+
+        $quote = $this->sampleQuote();
+
+        Http::fake([
+            'accounts.zoho.com/*' => Http::response(['access_token' => 'tok'], 200),
+            'www.zohoapis.com/crm/v8/Quotes/'.self::QUOTE_ID => Http::response(['data' => [$quote]], 200),
+            'www.zohoapis.com/crm/v8/Staffs/*' => Http::response(['data' => [[
+                'id' => '6274719000134262169', 'Nickname' => 'นุช',
+                'Image_Sing' => [['id' => '1', 'File_Id__s' => $fileId, 'File_Name__s' => 'sign.png']],
+            ]]], 200),
+            'www.zohoapis.com/crm/v8/files*' => Http::response($png, 200, ['Content-Type' => 'image/png']),
+            'www.zohoapis.com/*' => Http::response('', 204),
+        ]);
+
+        $this->get($this->url())->assertOk();
+
+        $this->assertFileExists(storage_path('app/signatures/'.$fileId.'.png'));
+        Http::assertSent(fn ($req) => str_contains($req->url(), '/crm/v8/files') && str_contains($req->url(), 'id='.$fileId));
+
+        @unlink(storage_path('app/signatures/'.$fileId.'.png'));
+    }
+
+    public function test_missing_files_scope_does_not_break_rendering(): void
+    {
+        $quote = $this->sampleQuote();
+
+        Http::fake([
+            'accounts.zoho.com/*' => Http::response(['access_token' => 'tok'], 200),
+            'www.zohoapis.com/crm/v8/Quotes/'.self::QUOTE_ID => Http::response(['data' => [$quote]], 200),
+            'www.zohoapis.com/crm/v8/Staffs/*' => Http::response(['data' => [[
+                'id' => '1', 'Image_Sing' => [['File_Id__s' => 'u1noscope']],
+            ]]], 200),
+            'www.zohoapis.com/crm/v8/files*' => Http::response(['code' => 'OAUTH_SCOPE_MISMATCH'], 401),
+            'www.zohoapis.com/*' => Http::response('', 204),
+        ]);
+
+        $this->get($this->url())->assertOk();
+        $this->assertFileDoesNotExist(storage_path('app/signatures/u1noscope.png'));
+    }
+
     public function test_unknown_form_returns_404_without_calling_zoho(): void
     {
         Http::fake();

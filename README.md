@@ -137,9 +137,14 @@ Rich Text Fields API (`/actions/fetch_full_data`) ให้อัตโนมั
 
 Scope ที่ Self Client ต้องมี:
 ```
-ZohoCRM.modules.quotes.READ,ZohoCRM.modules.accounts.READ,ZohoCRM.modules.contacts.READ,ZohoCRM.users.READ,ZohoCRM.modules.attachments.CREATE,ZohoCRM.modules.custom.READ,ZohoCRM.settings.fields.READ
+ZohoCRM.modules.quotes.READ,ZohoCRM.modules.accounts.READ,ZohoCRM.modules.contacts.READ,ZohoCRM.users.READ,ZohoCRM.modules.attachments.CREATE,ZohoCRM.modules.custom.READ,ZohoCRM.settings.fields.READ,ZohoCRM.Files.READ
 ```
-(`modules.custom.READ` ใช้อ่าน module Staffs เพื่อดึงชื่อเล่น, `settings.fields.READ` ใช้ตรวจ API name)
+(`modules.custom.READ` ใช้อ่าน module Staffs เพื่อดึงชื่อเล่น, `settings.fields.READ` ใช้ตรวจ API name,
+`Files.READ` ใช้ดาวน์โหลดรูปลายเซ็นพนักงานขายจาก field "Image Sign" ของ Staffs — ถ้าไม่มี scope นี้
+เอกสารยังออกได้ แค่กล่องผู้เสนอขายไม่มีรูปลายเซ็น)
+
+**ลายเซ็นพนักงานขาย** ดาวน์โหลดครั้งแรกแล้ว cache ไว้ที่ `storage/app/signatures/{File_Id}.png`
+เปลี่ยนรูปใน Staffs แล้ว File_Id เปลี่ยน ระบบจะดาวน์โหลดใหม่และสร้าง PDF ใหม่เอง
 
 ค่าอื่นในฟอร์ม:
 
