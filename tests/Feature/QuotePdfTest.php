@@ -134,6 +134,37 @@ class QuotePdfTest extends TestCase
         $this->assertStringStartsWith('%PDF-1', file_get_contents($path));
     }
 
+    public function test_approver_signature_only_on_approved_quotes(): void
+    {
+        $this->assertFileExists(config('quote.approver.signature'));
+
+        $pending = $this->sampleQuote();
+        $pending['Quote_Stage'] = 'ขออนุมัติ';
+        $approved = $this->sampleQuote();
+        $approved['Quote_Stage'] = 'อนุมัติ';
+        $approved['Modified_Time'] = '2026-10-22T11:00:00+07:00';
+
+        // Http::fake ซ้อนกันจะยึด stub แรก จึงใช้ sequence: request แรก = ยังไม่อนุมัติ, request ที่สอง = อนุมัติแล้ว
+        Http::fake([
+            'accounts.zoho.com/*' => Http::response(['access_token' => 'tok'], 200),
+            'www.zohoapis.com/crm/v8/Quotes/'.self::QUOTE_ID => Http::sequence()
+                ->push(['data' => [$pending]], 200)
+                ->push(['data' => [$approved]], 200),
+            'www.zohoapis.com/*' => Http::response('', 204),
+        ]);
+
+        $images = fn () => preg_match_all('/\/Subtype\s*\/Image/', file_get_contents(
+            $this->get($this->url())->assertOk()->baseResponse->getFile()->getPathname()
+        ));
+
+        $before = $images();
+        $after = $images();
+
+        // ยังไม่อนุมัติ: header + footer = 2 รูป; อนุมัติแล้วมีลายเซ็นผู้อนุมัติเพิ่ม (PNG โปร่งใส mPDF ฝังเป็นรูป + SMask)
+        $this->assertSame(2, $before);
+        $this->assertGreaterThan($before, $after);
+    }
+
     public function test_modified_quote_invalidates_cache(): void
     {
         // request แรกได้ Quote เวอร์ชันเดิม, request ที่สองได้เวอร์ชันที่ Modified_Time เปลี่ยน
