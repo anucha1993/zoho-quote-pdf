@@ -5,7 +5,7 @@
         <td class="nopad" style="width: {{ $wA }}%;"></td>
         <td class="bd b l" style="width: {{ $wB }}%;">เรียน</td>
         <td class="bd b l" style="width: {{ $wCH }}%;">{{ $q->customerName() }}</td>
-        <td class="bd b l nowrap" style="width: {{ $wI }}%;">ใบเสนอราคาเลขที่ :</td>
+        <td class="bd b l nowrap" style="width: {{ $wI }}%;">ใบเสนอราคาเลขที่&nbsp;:</td>
         <td class="bd b c" style="width: {{ $wJ + $wK }}%;">{{ $q->number() }}</td>
         <td class="nopad" style="width: {{ $wL }}%;"></td>
     </tr>
@@ -17,14 +17,14 @@
             {{ $q->billingLine1() }}<br>
             {{ $q->billingLine2() }}
         </td>
-        <td class="bd b l">วันที่ :</td>
+        <td class="bd b l">วันที่&nbsp;:</td>
         {{-- วันที่ dd/mm/yyyy แสดงเฉพาะเมื่อ Quote Stage = อนุมัติ --}}
         <td class="bd b c">{{ $q->isApproved() ? F::dateFormat($q->quoteDate()) : '' }}&nbsp;</td>
         <td class="nopad"></td>
     </tr>
     <tr style="height: 24.4pt;">
         <td class="nopad"></td>
-        <td class="bd b l">ผู้เสนอราคา :</td>
+        <td class="bd b l">ผู้เสนอราคา&nbsp;:</td>
         <td class="bd b c">{{ $q->salesName() }}</td>
         <td class="nopad"></td>
     </tr>
@@ -32,7 +32,7 @@
         <td class="nopad"></td>
         <td class="bd b l">ติดต่อ</td>
         <td class="bd b l">{{ $q->contactName() }}</td>
-        <td class="bd b l">โทรศัพท์ :</td>
+        <td class="bd b l">โทรศัพท์&nbsp;:</td>
         <td class="bd b c">{{ $q->contactMobile() }}</td>
         <td class="nopad"></td>
     </tr>
