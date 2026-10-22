@@ -6,6 +6,7 @@
      * @var \App\Support\QuoteData $q
      */
     use App\Support\QuoteData as F;
+    use App\Support\RichText;
 
     $items = $q->items();
     $minRows = (int) ($doc['min_item_rows'] ?? 3);
@@ -17,7 +18,8 @@
     $hasFooter = $footerImg && is_file($footerImg);
 
     // สัดส่วนคอลัมน์ Excel (A..L = 157.8 หน่วย) → เปอร์เซ็นต์ของความกว้างกระดาษ
-    $wA = 1.45; $wB = 7.97; $wCH = 57.30; $wI = 12.58; $wJ = 7.79; $wK = 12.58; $wL = 1.63;
+    // (คอลัมน์ I ขยายเล็กน้อยจาก 12.58 → 14.3 เพื่อให้ "ใบเสนอราคาเลขที่ :" อยู่บรรทัดเดียวหลังขยายฟอนต์)
+    $wA = 1.45; $wB = 7.97; $wCH = 55.58; $wI = 14.30; $wJ = 7.79; $wK = 12.58; $wL = 1.63;
 @endphp
 <!DOCTYPE html>
 <html lang="th">
@@ -28,7 +30,7 @@
     @page { sheet-size: A4; }
     body {
         font-family: '{{ $doc['font'] }}', sans-serif;
-        font-size: 11.7pt;        /* Angsana New 18pt × 0.65 */
+        font-size: 13pt;          /* Angsana New 18pt × 0.65 × 1.12 (ขยายจากต้นแบบเล็กน้อยให้อ่านง่าย) */
         color: #000;
         line-height: 1.15;
     }
@@ -43,6 +45,12 @@
     .l { text-align: left; }
     .top { vertical-align: top; }
     .nopad { padding: 0; }
+    .nowrap { white-space: nowrap; }
+
+    /* rich text จาก CRM: ไม่ให้ p/ol มี margin ใหญ่เกินฟอร์ม */
+    .rich p, .rich div { margin: 0; padding: 0; }
+    .rich ol, .rich ul { margin: 0 0 0 14pt; padding: 0; }
+    .rich li { margin: 0; }
 
     .bd  { border: 0.5pt solid #000; }
     .bl  { border-left: 0.5pt solid #000; }
@@ -54,25 +62,37 @@
     .fill-pink { background: #E6B8B7; }
     .fill-grey { background: #D9D9D9; }
 
-    .f24 { font-size: 15.6pt; }   /* 24pt × 0.65 */
-    .f22 { font-size: 14.3pt; }   /* 22pt × 0.65 */
-    .f18 { font-size: 11.7pt; }   /* 18pt × 0.65 */
-    .f16 { font-size: 10.4pt; }   /* 16pt × 0.65 */
-    .f15 { font-size: 9.75pt; }   /* 15pt × 0.65 */
+    .f24 { font-size: 17.5pt; }   /* 24pt × 0.65 × 1.12 */
+    .f22 { font-size: 16pt; }     /* 22pt */
+    .f18 { font-size: 13pt; }     /* 18pt */
+    .f16 { font-size: 11.5pt; }   /* 16pt */
+    .f15 { font-size: 11pt; }     /* 15pt */
 
-    /* กรอบนอกทั้งฟอร์ม (A1:L23) — mPDF ไม่รองรับ child selector จึงใช้ class ตรง ๆ */
-    .frame-cell { border: 0.5pt solid #000; padding: 0; }
+    /* กรอบนอกทั้งฟอร์ม (A1:L23) ยืดลงถึงเหนือ footer — mPDF ไม่รองรับ child selector จึงใช้ class ตรง ๆ */
+    .frame { border: 0.5pt solid #000; padding: 0; }
 
-    .sig-box { border: 0.5pt solid #000; height: 64pt; text-align: center; vertical-align: middle; }
+    /* ส่วนปิดท้าย (ข้อความ + กล่องลงนาม) ตรึงไว้ล่างสุดของกรอบ */
+    .closing-pinned { position: absolute; left: {{ $doc['margin_left_mm'] ?? 6 }}mm; bottom: {{ ($doc['margin_bottom_mm'] ?? 32) + 3 }}mm; width: {{ 210 - ($doc['margin_left_mm'] ?? 6) - ($doc['margin_right_mm'] ?? 4) }}mm; }
+
+    .sig-box { border: 0.5pt solid #000; height: 70pt; text-align: center; vertical-align: middle; }
     .sig-line { text-decoration: underline; }
     .pre { white-space: pre-wrap; }
 </style>
 </head>
 <body>
 
-<table class="frame">
-<tr>
-<td class="frame-cell">
+@php
+    // ความสูงกรอบ = กระดาษ A4 − ขอบบน − พื้นที่ footer − ช่องว่างเล็กน้อย (หน่วย mm)
+    $frameHeight = 297 - ($doc['margin_top_mm'] ?? 4.5) - ($doc['margin_bottom_mm'] ?? 32) - 1.5;
+    // ตรึงส่วนปิดท้ายไว้ล่างสุดเมื่อประเมินแล้วเนื้อหาไม่ล้นไปทับ (ประมาณความสูงเป็น pt)
+    //   แถวรายการ ≈ 26pt (+13pt ถ้ามีรายละเอียด), เงื่อนไข ≈ 15pt ต่อบรรทัด (ประมาณจากความยาวข้อความและจำนวน tag ขึ้นบรรทัด)
+    $termsHtml = RichText::block($q->paymentTerms());
+    $termsPlain = RichText::plain($q->paymentTerms());
+    $termsLines = (int) ceil(mb_strlen($termsPlain) / 110) + preg_match_all('/<(br|li|p|div)\b/i', $termsHtml);
+    $itemsHeight = max(count($items), $minRows) * 26 + count(array_filter($items, fn ($i) => $i['description'] !== '')) * 13;
+    $pinBottom = ($itemsHeight + $termsLines * 15) <= 330;
+@endphp
+<div class="frame" @if($pinBottom) style="height: {{ $frameHeight }}mm;" @endif>
 
     {{-- ============ แถว 1-2 : หัวกระดาษ (Picture 4 ที่ A1:K2) ============ --}}
     <table>
@@ -95,7 +115,7 @@
             <td class="nopad" style="width: {{ $wA }}%;"></td>
             <td class="bd b l" style="width: {{ $wB }}%;">เรียน</td>
             <td class="bd b l" style="width: {{ $wCH }}%;">{{ $q->customerName() }}</td>
-            <td class="bd b l" style="width: {{ $wI }}%;">ใบเสนอราคาเลขที่ :</td>
+            <td class="bd b l nowrap" style="width: {{ $wI }}%;">ใบเสนอราคาเลขที่ :</td>
             <td class="bd b c" style="width: {{ $wJ + $wK }}%;">{{ $q->number() }}</td>
             <td class="nopad" style="width: {{ $wL }}%;"></td>
         </tr>
@@ -132,7 +152,8 @@
     <table>
         <tr style="height: 53pt;">
             <td class="nopad" style="width: {{ $wA }}%;"></td>
-            <td class="bd b c f24 fill-pink" style="width: {{ 100 - $wA - $wL }}%; height: 53pt;">{{ $q->serviceSubject() !== '' ? $q->serviceSubject() : ' ' }}&nbsp;</td>
+            {{-- หัวข้อการให้บริการเป็น rich text จาก CRM → กรองเหลือ tag พื้นฐานแล้ว render --}}
+            <td class="bd b c f24 fill-pink" style="width: {{ 100 - $wA - $wL }}%; height: 53pt;">{!! RichText::inline($q->serviceSubject()) !!}&nbsp;</td>
             <td class="nopad" style="width: {{ $wL }}%;"></td>
         </tr>
         <tr style="height: 19pt;">
@@ -160,7 +181,7 @@
                 <td class="bd c f22">{{ $item['no'] }}</td>
                 <td class="bd l f22">
                     {{ $item['name'] }}
-                    @if($item['description'])<br><span class="f16">{!! nl2br(e($item['description'])) !!}</span>@endif
+                    @if($item['description'])<br><span class="f16">{!! RichText::inline($item['description']) !!}</span>@endif
                     @if($item['recurring_amount'] !== null && $item['recurring_amount'] > 0)
                         <br><span class="f16">ราคาค่าใช้งานปีถัดไป (Recurring Amount {{ F::money($item['recurring_amount']) }})</span>
                     @endif
@@ -200,9 +221,14 @@
     {{-- ============ แถว 16 : เงื่อนไข และรายละเอียดการชำระเงิน ============ --}}
     <table>
         <tr>
-            <td class="l top f18 pre" style="padding: 0 4pt; min-height: 13pt;">{!! nl2br(e($q->paymentTerms())) !!}</td>
+            <td class="l top f18 rich" style="padding: 0 4pt; min-height: 13pt;">{!! $termsHtml !!}</td>
         </tr>
     </table>
+
+@if($pinBottom)
+</div>
+<div class="closing-pinned">
+@endif
 
     {{-- ============ แถว 17-20 : ข้อความปิดท้าย (กึ่งกลาง) ============ --}}
     <table>
@@ -228,8 +254,8 @@
     </table>
 
     {{-- ============ แถว 23 : กล่องลงนาม 3 กล่อง (Rectangle 8 / 4 / 3) ============ --}}
-    <table style="page-break-inside: avoid; margin-top: 4pt; margin-bottom: 10pt;">
-        <tr style="height: 76pt;">
+    <table style="page-break-inside: avoid; margin-top: 4pt; margin-bottom: 8pt;">
+        <tr style="height: 84pt;">
             <td class="nopad" style="width: 3.6%;"></td>
             <td class="sig-box f16" style="width: 26.2%;">
                 <div>(<span class="sig-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>)</div>
@@ -257,9 +283,7 @@
         </tr>
     </table>
 
-</td>
-</tr>
-</table>
+</div>
 
 {{-- ============ แถว 25-28 : ท้ายกระดาษ (รูปภาพ 3) + รหัสแบบฟอร์ม ${Quotes.ISO}
      ตรึงไว้ล่างสุดของทุกหน้าด้วย htmlpagefooter (พื้นที่จองโดย margin_bottom ใน QuotePdfService) ============ --}}
@@ -273,10 +297,13 @@
             </td>
         </tr>
     </table>
+    {{-- รหัสฟอร์มจัดกึ่งกลางใต้ QR code ของภาพท้ายกระดาษ
+         (QR อยู่ที่ 83.7%–92.4% ของความกว้างภาพ 194mm ซึ่งวางกึ่งกลางพื้นที่ 200mm → ศูนย์กลาง QR ≈ 173.8mm) --}}
     <table>
         <tr>
-            <td class="r f18" style="width: {{ 100 - $wL }}%; padding-top: 2pt;">{{ $q->isoCode() }}</td>
-            <td class="nopad" style="width: {{ $wL }}%;"></td>
+            <td class="nopad" style="width: 78.4%;"></td>
+            <td class="c f18 nopad nowrap" style="width: 17%; padding-top: 1pt;">{{ $q->isoCode() }}</td>
+            <td class="nopad" style="width: 4.6%;"></td>
         </tr>
     </table>
 </htmlpagefooter>

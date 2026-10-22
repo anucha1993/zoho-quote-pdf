@@ -6,6 +6,7 @@ use App\Pdf\ThaiLanguageToFont;
 use App\Support\QuoteData;
 use App\Support\QuoteForm;
 use App\Support\QuoteLink;
+use App\Support\RichText;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
 use Mpdf\Config\ConfigVariables;
@@ -101,7 +102,7 @@ class QuotePdfService
         $mpdf = $this->makeMpdf($form);
         $mpdf->SetTitle($quote->number());
         $mpdf->SetAuthor(config('quote.company.name_th', ''));
-        $mpdf->SetSubject($quote->serviceSubject());
+        $mpdf->SetSubject(RichText::plain($quote->serviceSubject()));
 
         $mpdf->WriteHTML($html);
 
