@@ -222,6 +222,11 @@ class QuotePdfTest extends TestCase
                 'Email' => 'somchai@example.com',
                 'Phone' => '081-234-5678',
             ]]], 200),
+            'www.zohoapis.com/crm/v8/Staffs/*' => Http::response(['data' => [[
+                'id' => '6274719000134262169',
+                'Name' => '6905040',
+                'Nickname' => 'นุช',
+            ]]], 200),
             'www.zohoapis.com/crm/v8/users/*' => Http::response(['users' => [[
                 'id' => '6123456000000111111',
                 'full_name' => 'พนักงานขาย ทดสอบ',
