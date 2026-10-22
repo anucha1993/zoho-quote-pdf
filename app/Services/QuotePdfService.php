@@ -174,7 +174,25 @@ class QuotePdfService
             $mpdf->WriteHTML($css, HTMLParserMode::HEADER_CSS);
         }
 
+        //   <!--TERMS_BREAK-->            จุดขึ้นหน้าใหม่ก่อนส่วนเงื่อนไข (จาก _terms) — ขึ้นหน้าใหม่เฉพาะเมื่อส่วนก่อนหน้า
+        //                                 ยังไม่ล้นข้ามหน้า ถ้าตารางรายการยาวจนยอดรวมตกไปหน้าถัดไปแล้ว ให้เงื่อนไขต่อท้ายในหน้านั้นเลย
+        [$inner, $terms] = array_pad(explode('<!--TERMS_BREAK-->', $inner, 2), 2, null);
+
         $this->writeBodyWithFilledRows($mpdf, $inner, $doc);
+
+        if ($terms !== null && trim($terms) !== '') {
+            // หน้าที่ส่วนสุดท้ายก่อน marker "ควร" เริ่ม = 1 + จำนวน <pagebreak> ที่ template สั่งเอง (เช่น หน้า QT Destination)
+            $expectedPage = 1 + preg_match_all('/<pagebreak\b/i', $inner);
+            $spilled = $mpdf->page > $expectedPage;
+
+            if (! $spilled) {
+                $mpdf->AddPage();
+            } else {
+                $mpdf->WriteHTML('<div style="height: 10pt;"></div>');
+            }
+
+            $mpdf->WriteHTML($terms);
+        }
 
         if ($closing !== null && trim($closing) !== '') {
             // วัดพื้นที่ที่เหลือจริงบนหน้าปัจจุบัน (mm) ถ้าไม่พอสำหรับส่วนปิดท้าย → ขึ้นหน้าใหม่ก่อน
@@ -182,9 +200,15 @@ class QuotePdfService
             $needed = (float) ($doc['closing_height_mm'] ?? 70);
 
             if ($remaining < $needed) {
-                if (($doc['closing_mode'] ?? 'pin') === 'pin-or-flow') {
+                $mode = $doc['closing_mode'] ?? 'pin';
+
+                if ($mode === 'pin-or-flow') {
                     // ที่ไม่พอ → ไม่เปิดหน้าใหม่เพื่อใส่แค่ส่วนปิดท้าย แต่วางต่อท้ายเนื้อหาแบบไหลตามปกติ
                     // (ถอด position:absolute ออก ถ้าล้นจริงจะไปต่อหน้าถัดไปพร้อม page-break-inside: avoid)
+                    $closing = str_replace('class="closing-pinned"', 'class="closing-flow"', $closing);
+                } elseif ($mode === 'pin-or-top') {
+                    // ที่ไม่พอ → ขึ้นหน้าใหม่แล้ววางส่วนปิดท้ายต่อจากขอบบน (ไม่ตรึงล่างสุดจนเหลือที่ว่างโล่งด้านบน)
+                    $mpdf->AddPage();
                     $closing = str_replace('class="closing-pinned"', 'class="closing-flow"', $closing);
                 } else {
                     $mpdf->AddPage();

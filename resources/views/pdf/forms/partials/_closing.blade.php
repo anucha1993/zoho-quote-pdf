@@ -12,32 +12,27 @@
         @endforeach
     </table>
 
-    {{-- แถว 21-22 : การยืนยันการใช้บริการ --}}
-    <table>
-        <tr style="height: 21pt;">
-            <td class="nopad" style="width: {{ $wA }}%;"></td>
-            <td class="l b f18">{!! $texts['confirm_title'] !!}</td>
-            <td class="nopad" style="width: {{ $wL }}%;"></td>
+    {{-- แถว 21-22 : การยืนยันการใช้บริการ — ขอบซ้ายตรงกับกรอบลงนาม/ท้ายกระดาษ, เว้นบน 1 บรรทัด, หัวข้อ 18pt --}}
+    <table style="margin-top: 20pt;">
+        <tr style="height: 22pt;">
+            <td class="l b fh" style="padding: 0;">{!! $texts['confirm_title'] !!}</td>
         </tr>
-        <tr style="height: 21pt;">
-            <td class="nopad"></td>
-            <td class="l top f18">{!! $texts['confirm_body'] !!}</td>
-            <td class="nopad"></td>
+        <tr style="height: 22pt;">
+            <td class="l top f18" style="padding: 0;">{!! $texts['confirm_body'] !!}</td>
         </tr>
     </table>
 
-    {{-- แถว 23 : กล่องลงนาม 3 กล่อง (Rectangle 8 / 4 / 3) --}}
-    <table style="page-break-inside: avoid; margin-top: 4pt; margin-bottom: 8pt;">
-        <tr style="height: 84pt;">
-            <td class="nopad" style="width: 3.6%;"></td>
-            <td class="sig-box f16" style="width: 26.2%;">
+    {{-- แถว 23 : กล่องลงนาม 3 กล่อง เต็มความกว้างเท่าภาพท้ายกระดาษ (ซ้ายสุด-ขวาสุด) --}}
+    <table style="page-break-inside: avoid; margin-top: 6pt; margin-bottom: 8pt;">
+        <tr style="height: 96pt;">
+            <td class="sig-box f16" style="width: 31%;">
                 <div>(<span class="sig-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>)</div>
                 {{-- ( ${Quotes.Account Name} ) --}}
                 <div class="b">( {{ $q->customerName() ?: '&nbsp;' }} )</div>
                 <div class="b">{!! $texts['sign_customer'] !!}</div>
             </td>
-            <td class="nopad" style="width: 2.9%;"></td>
-            <td class="sig-box f16" style="width: 32.5%;">
+            <td class="nopad" style="width: 3.5%;"></td>
+            <td class="sig-box f16" style="width: 31%;">
                 @if(!empty($salesSignature) && is_file($salesSignature))
                     {{-- ลายเซ็นพนักงานขายจาก Staffs.Image Sign วางเหนือเส้นลงนาม --}}
                     <div style="margin-bottom: -6pt;"><img src="{{ $salesSignature }}" style="height: {{ $approver['signature_height_pt'] ?? 34 }}pt;"></div>
@@ -47,8 +42,8 @@
                 <div class="b">( {{ $q->salesFullName() ?: '&nbsp;' }} )</div>
                 <div class="b">{!! $texts['sign_sales'] !!}</div>
             </td>
-            <td class="nopad" style="width: 3.8%;"></td>
-            <td class="sig-box f16" style="width: 22.9%;">
+            <td class="nopad" style="width: 3.5%;"></td>
+            <td class="sig-box f16" style="width: 31%;">
                 @php $sigImg = $approver['signature'] ?? null; @endphp
                 @if($sigImg && is_file($sigImg) && $q->isApproved())
                     {{-- ลายเซ็นผู้อนุมัติ แสดงเฉพาะ Quote สถานะ "อนุมัติ" (quote.approved_stages) เช่นเดียวกับวันที่ --}}
@@ -58,7 +53,6 @@
                 <div class="b">( {{ $approver['name'] }} )</div>
                 <div class="b">{!! $approver['title'] !!}</div>
             </td>
-            <td class="nopad" style="width: 8.1%;"></td>
         </tr>
     </table>
 

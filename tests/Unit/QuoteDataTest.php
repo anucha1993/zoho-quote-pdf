@@ -56,18 +56,26 @@ class QuoteDataTest extends TestCase
         $this->assertSame('Owner X', (new QuoteData(['Owner' => ['name' => 'Owner X']], null, null, null, ['Nickname' => 'โบว์']))->salesName());
     }
 
-    public function test_billing_address_falls_back_to_account_when_quote_address_is_empty(): void
+    public function test_billing_address_prefers_account_then_falls_back_to_quote(): void
     {
         $account = ['Billing_Street' => '89/1 หมู่ 4 ต.หลักสาม', 'Billing_City' => 'อ.บ้านแพ้ว', 'Billing_State' => 'จ.สมุทรสาคร', 'Billing_Code' => '74120'];
 
-        $empty = new QuoteData(['Billing_Street' => null, 'Billing_City' => null], $account);
-        $this->assertSame('89/1 หมู่ 4 ต.หลักสาม อ.บ้านแพ้ว', $empty->billingLine1());
-        $this->assertSame('จ.สมุทรสาคร  74120', $empty->billingLine2());
-
-        // Quote มีที่อยู่เอง → ใช้ของ Quote ไม่ใช่ Account
+        // ตาม template «Accounts.Billing …» → ใช้ที่อยู่ของ Account ก่อน แม้ Quote จะมีที่อยู่เอง
         $own = new QuoteData(['Billing_Street' => '1 ถนนทดสอบ', 'Billing_City' => 'เขตทดสอบ'], $account);
-        $this->assertSame('1 ถนนทดสอบ เขตทดสอบ', $own->billingLine1());
-        $this->assertSame('', $own->billingLine2());
+        $this->assertSame('89/1 หมู่ 4 ต.หลักสาม อ.บ้านแพ้ว', $own->billingLine1());
+        $this->assertSame('จ.สมุทรสาคร  74120', $own->billingLine2());
+        $this->assertSame('89/1 หมู่ 4 ต.หลักสาม อ.บ้านแพ้ว จ.สมุทรสาคร  74120', $own->billingAddress());
+
+        // Account ไม่มีที่อยู่ → ใช้ Billing ของ Quote
+        $noAccount = new QuoteData(['Billing_Street' => '1 ถนนทดสอบ', 'Billing_City' => 'เขตทดสอบ'], ['Billing_Street' => null]);
+        $this->assertSame('1 ถนนทดสอบ เขตทดสอบ', $noAccount->billingLine1());
+        $this->assertSame('', $noAccount->billingLine2());
+    }
+
+    public function test_sales_phone_uses_custom_field_then_owner(): void
+    {
+        $this->assertSame('0954599817', (new QuoteData(['Sales_Mobile' => '0954599817']))->salesPhone());
+        $this->assertSame('081-000-0000', (new QuoteData(['Sales_Mobile' => ''], null, null, ['mobile' => '081-000-0000']))->salesPhone());
     }
 
     public function test_items_include_chinese_product_name_when_present(): void

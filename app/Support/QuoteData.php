@@ -186,32 +186,34 @@ class QuoteData implements PrintableRecord
     }
 
     /**
-     * ที่อยู่ที่ใช้พิมพ์: Billing ของ Quote ก่อน ถ้าว่างทั้งหมดใช้ Billing ของ Account (ลูกค้า) แทน
+     * ที่อยู่ที่ใช้พิมพ์: «Accounts.Billing Street/City/State/Code» ของลูกค้าก่อน (ตาม mail merge template)
+     * ถ้า Account ไม่มีที่อยู่ใช้ Billing ของ Quote แทน
      *
      * @return array{street: ?string, city: ?string, state: ?string, code: ?string, country: ?string}
      */
     protected function billingSource(): array
     {
-        $b = $this->f['billing'];
-        $fromQuote = [
-            'street' => $this->quote[$b['street']] ?? null,
-            'city' => $this->quote[$b['city']] ?? null,
-            'state' => $this->quote[$b['state']] ?? null,
-            'code' => $this->quote[$b['code']] ?? null,
-            'country' => $this->quote[$b['country']] ?? null,
-        ];
-
-        if ($this->joinParts($fromQuote) !== '') {
-            return $fromQuote;
-        }
-
         // Accounts ใช้ API name มาตรฐาน Billing_Street / Billing_City / Billing_State / Billing_Code / Billing_Country
-        return [
+        $fromAccount = [
             'street' => $this->account['Billing_Street'] ?? null,
             'city' => $this->account['Billing_City'] ?? null,
             'state' => $this->account['Billing_State'] ?? null,
             'code' => $this->account['Billing_Code'] ?? null,
             'country' => $this->account['Billing_Country'] ?? null,
+        ];
+
+        if ($this->joinParts($fromAccount) !== '') {
+            return $fromAccount;
+        }
+
+        $b = $this->f['billing'];
+
+        return [
+            'street' => $this->quote[$b['street']] ?? null,
+            'city' => $this->quote[$b['city']] ?? null,
+            'state' => $this->quote[$b['state']] ?? null,
+            'code' => $this->quote[$b['code']] ?? null,
+            'country' => $this->quote[$b['country']] ?? null,
         ];
     }
 
@@ -240,6 +242,16 @@ class QuoteData implements PrintableRecord
     public function ownerPhone(): string
     {
         return (string) ($this->owner['mobile'] ?? $this->owner['phone'] ?? '');
+    }
+
+    /**
+     * ${Quotes.เบอร์โทรศัพท์} เบอร์ฝ่ายขายผู้เสนอราคา (custom field) ถ้าว่างใช้เบอร์ Owner
+     */
+    public function salesPhone(): string
+    {
+        $phone = trim((string) $this->custom('sales_phone', ''));
+
+        return $phone !== '' ? $phone : $this->ownerPhone();
     }
 
     /**

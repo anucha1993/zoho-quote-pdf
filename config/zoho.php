@@ -158,6 +158,8 @@ return [
             'quote_date' => env('ZOHO_FIELD_QUOTE_DATE', 'field2'),
             // ${Quotes.หัวข้อการให้บริการ}  (ถ้าว่างจะเว้นว่างตามต้นแบบ)
             'service_subject' => env('ZOHO_FIELD_SERVICE_SUBJECT', 'field6'),
+            // ${Quotes.เบอร์โทรศัพท์}  เบอร์ฝ่ายขาย (ถ้าว่างจะใช้เบอร์ Owner)
+            'sales_phone' => env('ZOHO_FIELD_SALES_PHONE', 'Sales_Mobile'),
             // ${Quotes.ชื่อจริง} ${Quotes.นามสกุล}  (ถ้าว่างจะใช้ชื่อ Owner)
             'sales_first_name' => env('ZOHO_FIELD_SALES_FIRST_NAME', 'First_Name'),
             'sales_last_name' => env('ZOHO_FIELD_SALES_LAST_NAME', 'Last_Name'),

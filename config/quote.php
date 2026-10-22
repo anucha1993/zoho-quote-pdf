@@ -14,16 +14,17 @@ $cnForm = [
     'view' => 'pdf.forms.fa-sa-cn',
     'document' => [
         'subject_fill' => '#C5E0B4',   // แถบหัวข้อบริการสีเขียวตามต้นแบบ FA-SA-CN.xlsx
+        'closing_height_mm' => 130,    // ส่วนปิดท้าย 2 ภาษา (ทุกบรรทัดมีภาษาจีนเพิ่ม) สูงกว่าฟอร์มไทย
     ],
     // ป้ายในฟอร์ม: บรรทัดไทย + บรรทัดจีน (คำแปลจาก ex/FA-SA-CN.xlsx)
     'labels' => [
-        'to' => 'เรียน<br>致',
+        'to' => 'บริษัท&nbsp;:<br>公司:',
         'quote_no' => 'ใบเสนอราคาเลขที่&nbsp;:<br>报价单编号:',
-        'address' => 'ที่อยู่<br>地址',
+        'address' => 'ที่อยู่&nbsp;:<br>地址:',
         'date' => 'วันที่เสนอราคา&nbsp;:<br>报价日期:',
-        // ป้ายยาวกว่าช่อง 31mm ที่ 13pt จึงย่อเป็น 11.5pt ให้อยู่บรรทัดเดียว
-        'sales' => '<span style="font-size: 11.5pt;">ฝ่ายขายผู้เสนอราคา&nbsp;:</span><br>报价人:',
-        'contact' => 'ติดต่อ<br>联系人',
+        'sales' => 'ฝ่ายขายผู้เสนอราคา&nbsp;:<br>报价人:',
+        'contact' => 'ผู้ติดต่อ&nbsp;:<br>联系人:',
+        'contact_phone' => 'เบอร์&nbsp;:<br>电话:',
         'phone' => 'เบอร์โทรศัพท์&nbsp;:<br>联系方式:',
         'col_no' => 'ลำดับที่<br>序号',
         'col_desc' => 'รายการ<br>详细资料',
@@ -114,6 +115,9 @@ return [
             'module' => 'Deals',
             // ไม่มีหัว/ท้ายกระดาษ → ไม่ต้องจองพื้นที่ ใช้ขอบกระดาษปกติ
             'document' => [
+                'font' => 'angsananew',       // ใบงานคงฟอนต์/ขนาดเดิม (ไม่ตามใบเสนอราคา)
+                'font_size_pt' => 13,
+                'heading_size_pt' => 16,
                 'header_height_mm' => 6,
                 'margin_top_mm' => 10,
                 'margin_bottom_mm' => 12,
@@ -182,13 +186,15 @@ return [
     | ใส่ <br> ได้เพื่อแสดง 2 บรรทัด (เช่น ไทย + จีน) ค่าในนี้ถูก render แบบไม่ escape จึงต้องมาจาก config เท่านั้น
     */
     'labels' => [
-        'to' => 'เรียน',
+        // ตารางข้อมูลหัวฟอร์ม 4 แถว (ซ้าย: บริษัท/ที่อยู่/ผู้ติดต่อ/เบอร์  ขวา: เลขที่/วันที่/ฝ่ายขาย/เบอร์โทรศัพท์)
+        'to' => 'บริษัท&nbsp;:',
         'quote_no' => 'ใบเสนอราคาเลขที่&nbsp;:',
-        'address' => 'ที่อยู่',
-        'date' => 'วันที่&nbsp;:',
-        'sales' => 'ผู้เสนอราคา&nbsp;:',
-        'contact' => 'ติดต่อ',
-        'phone' => 'โทรศัพท์&nbsp;:',
+        'address' => 'ที่อยู่&nbsp;:',
+        'date' => 'วันที่เสนอราคา&nbsp;:',
+        'sales' => 'ฝ่ายขายผู้เสนอราคา&nbsp;:',
+        'contact' => 'ผู้ติดต่อ&nbsp;:',
+        'contact_phone' => 'เบอร์&nbsp;:',
+        'phone' => 'เบอร์โทรศัพท์&nbsp;:',
         'col_no' => 'ลำดับที่<br>ITEM',
         'col_desc' => 'รายการ<br>DESCRIPTION',
         'col_price' => 'ราคา<br>Price',
@@ -232,8 +238,10 @@ return [
         // ขอบล่างเผื่อพื้นที่ท้ายกระดาษ (รูป ISO/LINE/QR ตัดขอบขาวแล้วสูง ~25mm + บรรทัดเลขหน้า/รหัสฟอร์ม ~5mm + margin_footer)
         'margin_bottom_mm' => 34,
         'margin_footer_mm' => 3,
-        // ฟอนต์ตามต้นแบบ: Angsana New (มี fallback เป็น TH Sarabun New ถ้าไม่มีไฟล์)
-        'font' => env('QUOTE_FONT', 'angsananew'),
+        // ฟอนต์ใบเสนอราคา: TH Sarabun New 16pt (หัวข้อ 18pt) — ตั้ง QUOTE_FONT=angsananew ได้ถ้าต้องการแบบเดิม
+        'font' => env('QUOTE_FONT', 'thsarabunnew'),
+        'font_size_pt' => (float) env('QUOTE_FONT_SIZE', 16),
+        'heading_size_pt' => (float) env('QUOTE_HEADING_SIZE', 18),
         // ฟอนต์อักษรจีน (ฟอร์ม FA-SA-CN): SimSun จาก Windows (resources/fonts/simsun.ttc) — ไม่มีไฟล์ = ใช้ค่าเริ่มต้นของ mPDF
         'cjk_font' => env('QUOTE_CJK_FONT', 'simsun'),
         // สัดส่วนขนาดอักษรจีนเทียบกับข้อความรอบข้าง (SimSun ดูใหญ่กว่า Angsana New) 0.75 = 75%
@@ -251,7 +259,11 @@ return [
         // (ถ้า Quote ไม่มีเงื่อนไข ส่วนลงนามจะอยู่หน้า 1)
         'terms_on_new_page' => (bool) env('QUOTE_TERMS_ON_NEW_PAGE', true),
         // ความสูงของส่วนปิดท้าย (ข้อความ + การยืนยัน + กล่องลงนาม) หน่วย mm — ใช้ตัดสินว่าจะขึ้นหน้าใหม่ก่อนวางหรือไม่
-        'closing_height_mm' => 67,
+        // ความสูงส่วนปิดท้าย (ข้อความ 4 บรรทัด + การยืนยัน + กล่องลงนาม 96pt) ที่ 16pt ≈ 95mm → ถ้าที่เหลือน้อยกว่านี้ขึ้นหน้าใหม่
+        'closing_height_mm' => 98,
+        // pin = ตรึงล่างสุดเสมอ (ขึ้นหน้าใหม่ถ้าที่ไม่พอ), pin-or-top = ที่พอตรึงล่างสุด / ไม่พอขึ้นหน้าใหม่แล้ววางจากด้านบน,
+        // pin-or-flow = ที่พอตรึงล่างสุด / ไม่พอวางต่อท้ายเนื้อหาทันที (ใช้กับใบงาน TRACKING)
+        'closing_mode' => env('QUOTE_CLOSING_MODE', 'pin-or-top'),
         // วาดกรอบรอบเนื้อหาทุกหน้า
         'frame' => (bool) env('QUOTE_FRAME', false),
     ],

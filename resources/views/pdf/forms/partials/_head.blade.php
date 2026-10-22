@@ -6,9 +6,14 @@
 <title>{{ $q->number() }}</title>
 <style>
     /* ห้ามใส่กฎ at-page ที่นี่: mPDF จะล้าง page header (หัวกระดาษซ้ำทุกหน้า) เมื่อเจอ — ขนาดกระดาษตั้งใน QuotePdfService แล้ว */
+    @php
+        $fs = (float) ($doc['font_size_pt'] ?? 16);    // ขนาดตัวอักษรทั่วไป
+        $fh = (float) ($doc['heading_size_pt'] ?? 18); // หัวข้อ
+        $fsm = round($fs * 0.875, 1);                  // หมายเหตุย่อย (เช่น Recurring Amount)
+    @endphp
     body {
         font-family: '{{ $doc['font'] }}', sans-serif;
-        font-size: 13pt;
+        font-size: {{ $fs }}pt;
         color: #000;
         line-height: 1.15;
     }
@@ -51,27 +56,29 @@
     }
     @endif
 
-    /* ขนาดตัวอักษร 3 ระดับให้สม่ำเสมอ: 13pt ทั่วไป, 14pt รายการสินค้า, 16pt หัวข้อบริการ (ป้ายรอง 11pt) */
-    .f24 { font-size: 16pt; }
-    .f22 { font-size: 14pt; }
-    .f18 { font-size: 13pt; }
-    .f16 { font-size: 11pt; }
-    .f15 { font-size: 11pt; }
+    /* ขนาดตัวอักษร: ทั่วไป = font_size_pt (16), หัวข้อ = heading_size_pt (18), หมายเหตุย่อย = 87.5% */
+    .f24 { font-size: {{ $fh }}pt; }
+    .f22 { font-size: {{ $fs }}pt; }
+    .f18 { font-size: {{ $fs }}pt; }
+    .f16 { font-size: {{ $fs }}pt; }
+    .f15 { font-size: {{ $fs }}pt; }
+    .fh  { font-size: {{ $fh }}pt; }
+    .fsm { font-size: {{ $fsm }}pt; }
 
     /* ส่วนปิดท้าย (ข้อความ + กล่องลงนาม) ตรึงไว้ล่างสุดของหน้า */
     .closing-pinned { position: absolute; left: {{ $doc['margin_left_mm'] ?? 6 }}mm; bottom: {{ ($doc['margin_bottom_mm'] ?? 30) + 1 }}mm; width: {{ 210 - ($doc['margin_left_mm'] ?? 6) - ($doc['margin_right_mm'] ?? 4) }}mm; }
 
     /* ข้อความในกล่องลงนามชิดล่างเสมอ ให้ชื่อ/ตำแหน่งของทั้ง 3 กล่องอยู่บรรทัดเดียวกัน ไม่ว่ากล่องนั้นจะมีรูปลายเซ็นหรือไม่ */
-    .sig-box { border: 0.3pt solid #000; height: 70pt; text-align: center; vertical-align: bottom; padding-bottom: 5pt; }
+    .sig-box { border: 0.3pt solid #000; height: 88pt; text-align: center; vertical-align: bottom; padding-bottom: 5pt; }
 
     /* ตารางข้อมูลลูกค้า: เว้นระยะในช่องให้ข้อความไม่ชิดเส้น */
     table.info td.bd { padding: 3pt 7pt; }
 
     /* กล่องสรุปยอดท้ายตาราง: ไทย | อังกฤษ | จำนวนเงิน — ความกว้างคอลัมน์ = คอลัมน์ ราคา/จำนวน/จำนวนเงิน ของตาราง */
-    table.totals td { height: 21pt; padding: 0 4pt; font-size: 13pt; white-space: nowrap; }
-    table.totals td.t1 { width: {{ round($tI / $tSum * 100, 2) }}%; }
-    table.totals td.t2 { width: {{ round($tJ / $tSum * 100, 2) }}%; padding: 0 2pt; }
-    table.totals td.t3 { width: {{ round($tK / $tSum * 100, 2) }}%; }
+    table.totals td { height: 22pt; padding: 0 4pt; font-size: {{ $fs }}pt; white-space: nowrap; }
+    table.totals td.t1 { width: {{ $tT1 }}%; white-space: nowrap; }
+    table.totals td.t2 { width: {{ $tT2 }}%; padding: 0 2pt; }
+    table.totals td.t3 { width: {{ $tT3 }}%; }
 
     /* แถบชื่อส่วน (เช่น QT Destination) เหนือตารางรายการชุดที่ 2 */
     .section-title { background: #D9D9D9; font-weight: bold; text-align: center; height: 24pt; }

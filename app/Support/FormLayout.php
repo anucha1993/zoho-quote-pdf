@@ -32,9 +32,23 @@ class FormLayout
         $tK = 11.58;
         $tSum = $tI + $tJ + $tK;
         $tCH = round(100 - $wA - $wB - $tSum - $wL, 2);
+        // กล่องสรุปยอด: คอลัมน์ป้ายไทยขยายไปทางซ้ายอีก tExtra% ให้ "จำนวนเงินรวมทั้งสิ้น" 16pt อยู่บรรทัดเดียว
+        // (คอลัมน์ Total xxx / จำนวนเงิน ยังตรงกับคอลัมน์ จำนวน / จำนวนเงิน ของตาราง)
+        $tExtra = 9.0;
+        $tTotW = round($tSum + $tExtra, 2);
+        $tT1 = round(($tI + $tExtra) / $tTotW * 100, 2);
+        $tT2 = round($tJ / $tTotW * 100, 2);
+        $tT3 = round(100 - $tT1 - $tT2, 2);
 
         // ตัดขอบขาวซ้าย/ขวาในตัวไฟล์ภาพออก ให้เนื้อหา header และ footer ยาวเท่ากันเมื่อ render 200mm
         $trim = (bool) ($company['trim_image_sides'] ?? true);
+        // ตารางข้อมูลหัวฟอร์ม 4 แถว: ป้ายซ้าย | ค่าซ้าย | ป้ายขวา | ค่าขวา (รวม = 100 − wA − wL)
+        // ป้ายกว้างพอให้ "ฝ่ายขายผู้เสนอราคา :" / "ใบเสนอราคาเลขที่ :" ตัวหนา 16pt อยู่บรรทัดเดียว
+        $iLabelL = 12.5;
+        $iLabelR = 20.5;
+        $iValR = 26.0;
+        $iValL = round(100 - $wA - $wL - $iLabelL - $iLabelR - $iValR, 2);
+
         $headerImg = $company['header_image'] ?? null;
         $footerImg = $company['footer_image'] ?? null;
         if ($trim) {
@@ -45,6 +59,8 @@ class FormLayout
         return [
             'wA' => $wA, 'wB' => $wB, 'wCH' => $wCH, 'wI' => $wI, 'wJ' => $wJ, 'wK' => $wK, 'wL' => $wL,
             'tI' => $tI, 'tJ' => $tJ, 'tK' => $tK, 'tSum' => $tSum, 'tCH' => $tCH,
+            'iLabelL' => $iLabelL, 'iValL' => $iValL, 'iLabelR' => $iLabelR, 'iValR' => $iValR,
+            'tTotW' => $tTotW, 'tT1' => $tT1, 'tT2' => $tT2, 'tT3' => $tT3,
             'headerImg' => $headerImg,
             'footerImg' => $footerImg,
             'hasHeader' => $headerImg && is_file($headerImg),

@@ -95,12 +95,12 @@
     <!--/BLANKROWS-->
 @endif
 
-{{-- กล่องสรุปยอด (ขวา) กว้างเท่า 3 คอลัมน์ขวาของตารางพอดี เส้นแบ่งจึงตรงกัน --}}
+{{-- กล่องสรุปยอด (ขวา): 2 คอลัมน์ขวาตรงกับคอลัมน์ จำนวน/จำนวนเงิน ของตาราง, คอลัมน์ป้ายไทยกว้างกว่าคอลัมน์ ราคา เล็กน้อย --}}
 <table style="margin-top: 6pt;">
     <tr>
         <td class="nopad" style="width: {{ $wA }}%;"></td>
-        <td class="nopad" style="width: {{ round(100 - $wA - $wL - $tSum, 2) }}%;"></td>
-        <td class="nopad" style="width: {{ $tSum }}%;">
+        <td class="nopad" style="width: {{ round(100 - $wA - $wL - $tTotW, 2) }}%;"></td>
+        <td class="nopad" style="width: {{ $tTotW }}%;">
             <table class="totals">
                 <tr>
                     <td class="bd r b t1">{!! $L['total_amount'][0] !!}</td>
