@@ -29,6 +29,20 @@ return [
     | เพิ่มฟอร์มใหม่ได้โดยวางไฟล์ Blade เพิ่ม ไม่ต้องแก้ที่นี่ (ใส่เฉพาะเมื่อต้องการ override ค่า)
     */
     'default_form' => env('QUOTE_DEFAULT_FORM', 'FA-SA-TH'),
+
+    /*
+    | เลือกฟอร์มอัตโนมัติ: URL /auto/{id} จะอ่านค่า field ของ Quote (ค่าเริ่มต้น ISO เช่น "FA-SA-02-062")
+    | แล้วเทียบกับ map ด้านล่าง → ได้ slug ของฟอร์ม ถ้าไม่ตรงใช้ default_form
+    | key ใน map รองรับ * ท้ายเป็น prefix เช่น 'FA-SA-02-06*' => 'FA-SA-TH'
+    | ใน CRM จึงใช้ปุ่มเดียว https://pdf.trackingmouthefirst.com/auto/${Quotes.Quote Id} สำหรับทุกฟอร์ม
+    */
+    'auto_form' => [
+        'field' => env('QUOTE_FORM_FIELD', 'ISO'),
+        'map' => [
+            // 'FA-SA-02-062' => 'FA-SA-TH',
+            // 'FA-SA-02-*-CN' => 'FA-SA-CN',
+        ],
+    ],
     'forms' => [
         'FA-SA-TH' => [
             'label' => 'ใบเสนอราคา ภาษาไทย (FA-SA)',

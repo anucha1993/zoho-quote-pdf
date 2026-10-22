@@ -21,8 +21,15 @@
 ผลลัพธ์: กดปุ่มแล้วเปิด PDF ทันที ระบบจะดึงข้อมูลล่าสุดจาก CRM สร้าง PDF และ cache ไว้
 จนกว่า Quote จะถูกแก้ไข (Modified Time เปลี่ยน) หรือ template ถูกอัปเดต
 
-**หลายฟอร์ม:** สร้างปุ่มละ 1 ฟอร์ม เปลี่ยนเฉพาะชื่อฟอร์มใน URL เช่น
-`https://pdf.trackingmouthefirst.com/FA-SA-CN/${Quotes.Quote Id}`
+**หลายฟอร์ม — เลือกได้ 3 แบบ (ใช้ร่วมกันได้):**
+
+| แบบ | URL ในปุ่ม | เหมาะกับ |
+|---|---|---|
+| **A. อัตโนมัติ** (แนะนำ) | `https://pdf.trackingmouthefirst.com/auto/${Quotes.Quote Id}` | ปุ่มเดียวทุกฟอร์ม ระบบเลือกจากฟิลด์ **ISO** ของ Quote ตามตาราง `auto_form.map` ใน `config/quote.php` (รองรับ `*` เช่น `FA-SA-02-*-CN => FA-SA-CN`) ไม่ตรงใช้ฟอร์มเริ่มต้น |
+| **B. หน้าเลือกฟอร์ม** | `https://pdf.trackingmouthefirst.com/${Quotes.Quote Id}/forms` | กดปุ่มแล้วเห็นรายการฟอร์มทั้งหมดพร้อมปุ่ม "เปิด PDF / ดาวน์โหลด" และไฮไลต์ฟอร์มที่ระบบแนะนำ (dropdown ฝั่งเว็บ ไม่ต้องแก้ CRM เมื่อเพิ่มฟอร์ม) |
+| **C. Picklist ใน CRM** | `https://pdf.trackingmouthefirst.com/${Quotes.PDF Form}/${Quotes.Quote Id}` | สร้างฟิลด์ picklist ชื่อ `PDF Form` ค่าเป็น slug (`FA-SA-TH`, `FA-SA-CN`, …) ให้พนักงานเลือกในหน้า Quote แล้วปุ่มเดียวใช้ค่านั้น |
+
+จะสร้างปุ่มแยกต่อฟอร์ม (`/FA-SA-CN/${Quotes.Quote Id}`) ก็ยังได้เหมือนเดิม
 รายชื่อฟอร์มที่มี = ไฟล์ใน `resources/views/pdf/forms/` (ดู README หัวข้อ "เพิ่มแบบฟอร์มใหม่")
 
 ถ้าต้องการให้ **ดาวน์โหลด** แทนเปิดในแท็บ ใส่ `?download=1` ต่อท้าย:

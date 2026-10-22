@@ -177,6 +177,10 @@ URL รูปแบบ `https://pdf.trackingmouthefirst.com/{ฟอร์ม}/{r
 |---|---|---|
 | `FA-SA-TH` | `resources/views/pdf/forms/fa-sa-th.blade.php` | ใบเสนอราคาภาษาไทย (ค่าเริ่มต้น) |
 
+URL พิเศษ:
+- `/auto/{id}` ระบบเลือกฟอร์มเองจากฟิลด์ ISO ของ Quote ตาม `auto_form.map` ใน `config/quote.php`
+- `/{id}/forms` หน้าเว็บรายการทุกฟอร์ม พร้อมปุ่มเปิด/ดาวน์โหลด และไฮไลต์ฟอร์มที่แนะนำ
+
 **เพิ่มแบบฟอร์มใหม่** (เช่น `FA-SA-CN`):
 1. คัดลอก `fa-sa-th.blade.php` เป็น `resources/views/pdf/forms/fa-sa-cn.blade.php` แล้วแก้ layout
    (ชื่อไฟล์ = slug ตัวพิมพ์เล็ก, ใน URL ใช้ตัวพิมพ์ใหญ่/เล็กก็ได้)

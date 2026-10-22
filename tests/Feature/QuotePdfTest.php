@@ -274,6 +274,33 @@ class QuotePdfTest extends TestCase
             ->assertHeader('X-Quote-Form', 'FA-SA-TH');
     }
 
+    public function test_auto_form_is_resolved_from_quote_iso_field(): void
+    {
+        config(['quote.auto_form' => ['field' => 'ISO', 'map' => ['FA-SA-02-1*' => 'FA-SA-TH', 'XX-*' => 'NOPE']]]);
+        $this->fakeZoho(); // sampleQuote มี ISO = FA-SA-02-103
+
+        $this->get('/auto/'.self::QUOTE_ID)->assertOk()->assertHeader('X-Quote-Form', 'FA-SA-TH');
+    }
+
+    public function test_auto_form_falls_back_to_default_when_no_mapping(): void
+    {
+        config(['quote.auto_form' => ['field' => 'ISO', 'map' => ['ZZ-*' => 'FA-SA-TH']], 'quote.default_form' => 'FA-SA-TH']);
+        $this->fakeZoho();
+
+        $this->get('/AUTO/'.self::QUOTE_ID)->assertOk()->assertHeader('X-Quote-Form', 'FA-SA-TH');
+    }
+
+    public function test_form_picker_page_lists_available_forms(): void
+    {
+        $this->fakeZoho();
+
+        $this->get('/'.self::QUOTE_ID.'/forms')
+            ->assertOk()
+            ->assertSee('FA-SA-TH')
+            ->assertSee('P-PJ 2026-0688')
+            ->assertSee('/FA-SA-TH/'.self::QUOTE_ID);
+    }
+
     public function test_short_url_rejects_non_numeric_or_short_ids(): void
     {
         Http::fake();

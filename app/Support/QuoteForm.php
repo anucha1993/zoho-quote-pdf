@@ -53,6 +53,65 @@ class QuoteForm
             ?? throw new \RuntimeException('Default quote form is not configured');
     }
 
+    /** slug พิเศษใน URL ที่ให้ระบบเลือกฟอร์มเองจากข้อมูล Quote */
+    public const AUTO = 'auto';
+
+    public static function isAuto(?string $slug): bool
+    {
+        return strcasecmp(trim((string) $slug), self::AUTO) === 0;
+    }
+
+    /**
+     * เลือกฟอร์มจากข้อมูล Quote ตาม config quote.auto_form (field → map) — ไม่ตรงใช้ฟอร์มเริ่มต้น
+     */
+    public static function resolveAuto(QuoteData $quote): self
+    {
+        $field = (string) config('quote.auto_form.field', 'ISO');
+        $value = $quote->quote[$field] ?? null;
+        $value = is_array($value) ? ($value['name'] ?? '') : trim((string) $value);
+
+        if ($value !== '') {
+            foreach ((array) config('quote.auto_form.map', []) as $pattern => $slug) {
+                $regex = '/^'.str_replace('\*', '.*', preg_quote((string) $pattern, '/')).'$/i';
+                if (preg_match($regex, $value) && ($form = self::find($slug))) {
+                    return $form;
+                }
+            }
+        }
+
+        return self::default();
+    }
+
+    /**
+     * รายการฟอร์มทั้งหมดที่ใช้ได้ = config forms + ไฟล์ใน resources/views/pdf/forms/
+     *
+     * @return self[]
+     */
+    public static function all(): array
+    {
+        $slugs = array_keys(config('quote.forms', []));
+
+        foreach (glob(resource_path('views/pdf/forms/*.blade.php')) ?: [] as $file) {
+            $slugs[] = strtoupper(basename($file, '.blade.php'));
+        }
+
+        $forms = [];
+        foreach (array_unique(array_map('strtoupper', $slugs)) as $slug) {
+            if ($form = self::find($slug)) {
+                $forms[$form->slug] = $form;
+            }
+        }
+
+        ksort($forms);
+
+        return array_values($forms);
+    }
+
+    public function label(): string
+    {
+        return (string) $this->option('label', $this->slug);
+    }
+
     /**
      * path ของไฟล์ Blade (ใช้คำนวณเวอร์ชัน template สำหรับ cache)
      */

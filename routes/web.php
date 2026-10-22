@@ -53,6 +53,9 @@ if (config('quote.allow_unsigned')) {
                 ->middleware(VerifyQuoteKey::class)
                 ->name('quote.form.short.attach');
 
+            // หน้าเลือกแบบฟอร์ม (รายการทุกฟอร์ม) — ต้องประกาศก่อน /{form}/{id} จึงจะไม่ชนกัน
+            Route::get('/{id}/forms', [QuoteController::class, 'pick'])->name('quote.pick');
+
             Route::get('/{id}', [QuoteController::class, 'show'])->name('quote.short');
             Route::post('/{id}/attach', [QuoteController::class, 'attach'])
                 ->middleware(VerifyQuoteKey::class)
