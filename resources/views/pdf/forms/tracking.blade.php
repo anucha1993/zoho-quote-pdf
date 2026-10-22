@@ -24,6 +24,7 @@
     table.track th { background: #D9D9D9; font-weight: bold; text-align: center; font-size: 12pt; }
     table.track td { font-size: 12pt; vertical-align: middle; }
     .title { font-size: 16pt; font-weight: bold; margin: 2pt 0 6pt 4pt; }
+    .sig2 { border: 0.3pt solid #000; height: 80pt; text-align: center; vertical-align: middle; font-size: 12pt; }
 </style>
 
 <div class="content">
@@ -76,7 +77,29 @@
     </table>
 
 </div>
-{{-- ฟอร์มนี้ไม่มีกล่องลงนาม (ตัดออกตามคำขอ) --}}
+<!--CLOSING-->
+<div class="closing-pinned">
+    {{-- กล่องลงนาม 2 กล่อง: ผู้เปิดใบงาน / ผู้อนุมัติ (ไม่พิมพ์รูปลายเซ็น เซ็นสดบนกระดาษ) --}}
+    <table style="page-break-inside: avoid; margin-bottom: 8pt;">
+        <tr style="height: 90pt;">
+            <td class="nopad" style="width: 22%;"></td>
+            <td class="sig2" style="width: 24%;">
+                <div>(<span class="sig-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>)</div>
+                <div>____/____/____</div>
+                <div class="b">({{ $texts['sign_opener'] ?? 'ผู้เปิดใบงาน' }})</div>
+                <div class="f16">{{ $q->openerName() }}</div>
+            </td>
+            <td class="nopad" style="width: 8%;"></td>
+            <td class="sig2" style="width: 24%;">
+                <div>(<span class="sig-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>)</div>
+                <div>____/____/____</div>
+                <div class="b">({{ $texts['sign_approver'] ?? 'ผู้อนุมัติ' }})</div>
+                <div class="f16">&nbsp;</div>
+            </td>
+            <td class="nopad" style="width: 22%;"></td>
+        </tr>
+    </table>
+</div>
 
 </body>
 </html>
