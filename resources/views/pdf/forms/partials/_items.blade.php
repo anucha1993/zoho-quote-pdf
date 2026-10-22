@@ -107,11 +107,14 @@
                     <td class="bd c b t2 nowrap">{!! $L['total_amount'][1] !!}</td>
                     <td class="bd r t3">{{ F::money($totals['amount'], false) }}</td>
                 </tr>
+                {{-- แถว "ส่วนลด / Total Discount" ไม่แสดงตามคำขอ (เปิดได้ด้วย document.show_discount = true) --}}
+                @if(!empty($doc['show_discount']))
                 <tr>
                     <td class="bd r b t1">{!! $L['total_discount'][0] !!}</td>
                     <td class="bd c b t2 nowrap">{!! $L['total_discount'][1] !!}</td>
                     <td class="bd r t3">{{ F::money($totals['discount'], false) }}</td>
                 </tr>
+                @endif
                 <tr>
                     <td class="bd r b t1">{!! $L['total_tax'][0] !!}</td>
                     <td class="bd c b t2 nowrap">{!! $L['total_tax'][1] !!}</td>
