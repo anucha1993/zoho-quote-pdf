@@ -7,9 +7,12 @@
         <div style="height: 9pt;"></div>
     @endif
 
+    {{-- เว้นระยะซ้าย/ขวาให้ตรงแนวกับตารางด้านบน (ไม่ชิดขอบกระดาษ) --}}
     <table>
         <tr>
-            <td class="l top f18 rich" style="padding: 2pt 4pt 0 4pt; min-height: 13pt;">{!! $termsHtml !!}</td>
+            <td class="nopad" style="width: {{ $wA }}%;"></td>
+            <td class="l top f18 rich" style="padding: 6pt 18pt 0 18pt; min-height: 13pt;">{!! $termsHtml !!}</td>
+            <td class="nopad" style="width: {{ $wL }}%;"></td>
         </tr>
     </table>
 @endif

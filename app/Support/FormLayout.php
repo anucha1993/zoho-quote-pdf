@@ -33,8 +33,14 @@ class FormLayout
         $tSum = $tI + $tJ + $tK;
         $tCH = round(100 - $wA - $wB - $tSum - $wL, 2);
 
+        // ตัดขอบขาวซ้าย/ขวาในตัวไฟล์ภาพออก ให้เนื้อหา header และ footer ยาวเท่ากันเมื่อ render 200mm
+        $trim = (bool) ($company['trim_image_sides'] ?? true);
         $headerImg = $company['header_image'] ?? null;
         $footerImg = $company['footer_image'] ?? null;
+        if ($trim) {
+            $headerImg = $headerImg ? ImageTrim::sides($headerImg) : null;
+            $footerImg = $footerImg ? ImageTrim::sides($footerImg) : null;
+        }
 
         return [
             'wA' => $wA, 'wB' => $wB, 'wCH' => $wCH, 'wI' => $wI, 'wJ' => $wJ, 'wK' => $wK, 'wL' => $wL,

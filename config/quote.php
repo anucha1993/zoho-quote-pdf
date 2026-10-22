@@ -117,7 +117,8 @@ return [
                 'header_height_mm' => 6,
                 'margin_top_mm' => 10,
                 'margin_bottom_mm' => 12,
-                'closing_height_mm' => 40,   // ความสูงกล่องลงนาม (ใช้ตัดสินว่าต้องขึ้นหน้าใหม่ก่อนวางหรือไม่)
+                'closing_height_mm' => 40,   // ความสูงกล่องลงนาม
+                'closing_mode' => 'pin-or-flow', // มีที่พอ → ตรึงล่างสุด, ไม่พอ → ต่อท้ายตาราง (ไม่เปิดหน้าใหม่เพื่อกล่องอย่างเดียว)
             ],
             'texts' => [
                 'tracking_title' => 'Deal Information & Tracking',
@@ -163,6 +164,8 @@ return [
         // ภาพหัวกระดาษ / ท้ายกระดาษ (ตามแบบฟอร์ม TFG หัวกระดาษ-ISO)
         'header_image' => env('COMPANY_HEADER_IMAGE', resource_path('images/header.jpg')),
         'footer_image' => env('COMPANY_FOOTER_IMAGE', resource_path('images/footer.jpg')),
+        // ตัดขอบขาวซ้าย/ขวาในไฟล์ภาพอัตโนมัติ ให้เนื้อหาหัว/ท้ายกระดาษกว้างเท่ากัน (ดู App\Support\ImageTrim)
+        'trim_image_sides' => (bool) env('COMPANY_TRIM_IMAGE_SIDES', true),
     ],
 
     // ผู้อนุมัติใบเสนอราคา (กล่องลงนามด้านขวา)
@@ -226,8 +229,8 @@ return [
         'margin_top_mm' => 4.5,
         // ความสูงพื้นที่หัวกระดาษ (ภาพโลโก้/ที่อยู่) ที่ซ้ำทุกหน้า — margin บนของเนื้อหา = margin_top_mm + ค่านี้
         'header_height_mm' => 32,
-        // ขอบล่างเผื่อพื้นที่ท้ายกระดาษ (รูป ISO/LINE/QR + รหัสฟอร์ม) ซึ่งตรึงไว้ล่างสุดของทุกหน้า
-        'margin_bottom_mm' => 31,
+        // ขอบล่างเผื่อพื้นที่ท้ายกระดาษ (รูป ISO/LINE/QR ตัดขอบขาวแล้วสูง ~25mm + บรรทัดเลขหน้า/รหัสฟอร์ม ~5mm + margin_footer)
+        'margin_bottom_mm' => 34,
         'margin_footer_mm' => 3,
         // ฟอนต์ตามต้นแบบ: Angsana New (มี fallback เป็น TH Sarabun New ถ้าไม่มีไฟล์)
         'font' => env('QUOTE_FONT', 'angsananew'),

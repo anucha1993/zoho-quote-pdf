@@ -182,7 +182,13 @@ class QuotePdfService
             $needed = (float) ($doc['closing_height_mm'] ?? 70);
 
             if ($remaining < $needed) {
-                $mpdf->AddPage();
+                if (($doc['closing_mode'] ?? 'pin') === 'pin-or-flow') {
+                    // ที่ไม่พอ → ไม่เปิดหน้าใหม่เพื่อใส่แค่ส่วนปิดท้าย แต่วางต่อท้ายเนื้อหาแบบไหลตามปกติ
+                    // (ถอด position:absolute ออก ถ้าล้นจริงจะไปต่อหน้าถัดไปพร้อม page-break-inside: avoid)
+                    $closing = str_replace('class="closing-pinned"', 'class="closing-flow"', $closing);
+                } else {
+                    $mpdf->AddPage();
+                }
             }
 
             // ส่วนปิดท้ายใช้ position:absolute (bottom) จึงไปเกาะล่างสุดของหน้าปัจจุบัน

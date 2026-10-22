@@ -61,7 +61,8 @@
     /* ส่วนปิดท้าย (ข้อความ + กล่องลงนาม) ตรึงไว้ล่างสุดของหน้า */
     .closing-pinned { position: absolute; left: {{ $doc['margin_left_mm'] ?? 6 }}mm; bottom: {{ ($doc['margin_bottom_mm'] ?? 30) + 1 }}mm; width: {{ 210 - ($doc['margin_left_mm'] ?? 6) - ($doc['margin_right_mm'] ?? 4) }}mm; }
 
-    .sig-box { border: 0.3pt solid #000; height: 70pt; text-align: center; vertical-align: middle; }
+    /* ข้อความในกล่องลงนามชิดล่างเสมอ ให้ชื่อ/ตำแหน่งของทั้ง 3 กล่องอยู่บรรทัดเดียวกัน ไม่ว่ากล่องนั้นจะมีรูปลายเซ็นหรือไม่ */
+    .sig-box { border: 0.3pt solid #000; height: 70pt; text-align: center; vertical-align: bottom; padding-bottom: 5pt; }
 
     /* ตารางข้อมูลลูกค้า: เว้นระยะในช่องให้ข้อความไม่ชิดเส้น */
     table.info td.bd { padding: 3pt 7pt; }

@@ -79,8 +79,9 @@
 </div>
 <!--CLOSING-->
 <div class="closing-pinned">
-    {{-- กล่องลงนาม 2 กล่อง: ผู้เปิดใบงาน / ผู้อนุมัติ (ไม่พิมพ์รูปลายเซ็น เซ็นสดบนกระดาษ) --}}
-    <table style="page-break-inside: avoid; margin-bottom: 8pt;">
+    {{-- กล่องลงนาม 2 กล่อง: ผู้เปิดใบงาน / ผู้อนุมัติ (ไม่พิมพ์รูปลายเซ็น เซ็นสดบนกระดาษ)
+         closing_mode = pin-or-flow: มีที่พอ → ตรึงล่างสุดของหน้า, ไม่พอ → วางต่อท้ายตารางแทนการขึ้นหน้าใหม่ --}}
+    <table style="page-break-inside: avoid; margin-top: 16pt; margin-bottom: 8pt;">
         <tr style="height: 90pt;">
             <td class="nopad" style="width: 22%;"></td>
             <td class="sig2" style="width: 24%;">
