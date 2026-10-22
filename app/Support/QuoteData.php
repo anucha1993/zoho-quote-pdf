@@ -36,10 +36,27 @@ class QuoteData
         return (string) ($this->quote['id'] ?? '');
     }
 
-    /** ${Quotes.Quote Number} */
+    /**
+     * ${Quotes.Quote Number} — เลขที่เอกสาร (ใช้เป็นชื่อไฟล์ด้วย)
+     * ใน org นี้ Subject เก็บเลขที่แบบ "PRE-MOU2026-0194" จึงอ่านตาม config zoho.fields.document_number
+     * แล้วถอยไปยัง number_fallback (Quotation_Number, Quote_Number) และ record id ตามลำดับ
+     */
     public function number(): string
     {
-        return (string) ($this->quote[$this->f['quote_number']] ?? $this->id());
+        $candidates = array_merge(
+            [$this->f['document_number'] ?? $this->f['quote_number']],
+            $this->f['number_fallback'] ?? [],
+            [$this->f['quote_number']]
+        );
+
+        foreach ($candidates as $key) {
+            $value = $this->quote[$key] ?? null;
+            if (is_scalar($value) && trim((string) $value) !== '') {
+                return trim((string) $value);
+            }
+        }
+
+        return $this->id();
     }
 
     public function subject(): string
@@ -47,10 +64,10 @@ class QuoteData
         return (string) ($this->quote[$this->f['subject']] ?? '');
     }
 
-    /** ${Quotes.หัวข้อการให้บริการ} — ถ้าว่างใช้ Subject */
+    /** ${Quotes.หัวข้อการให้บริการ} — ถ้าว่างจะเว้นว่างเหมือน mail merge ของต้นแบบ */
     public function serviceSubject(): string
     {
-        return trim((string) ($this->custom('service_subject') ?: $this->subject()));
+        return trim((string) $this->custom('service_subject', ''));
     }
 
     public function stage(): string
@@ -223,7 +240,8 @@ class QuoteData
             $name = is_array($product) ? ($product['name'] ?? '') : (string) $product;
 
             $items[] = [
-                'no' => (int) ($row['S_NO'] ?? $row['SNO'] ?? $i + 1),
+                // ${QT Thailand.S.NO} = Sequence_Number ของ subform
+                'no' => (int) ($row['Sequence_Number'] ?? $row['S_NO'] ?? $i + 1),
                 'name' => (string) $name,
                 'code' => (string) (is_array($product) ? ($product['Product_Code'] ?? '') : ''),
                 'description' => (string) ($row[$k['description']] ?? $row['Product_Description'] ?? ''),
@@ -232,8 +250,8 @@ class QuoteData
                 'list_price' => (float) ($row[$k['list_price']] ?? 0),
                 'discount' => (float) ($row[$k['discount']] ?? 0),
                 'tax' => (float) ($row[$k['tax']] ?? 0),
-                // ${QT Thailand.Amount}: Amount → Net_Total → Total → คำนวณเอง
-                'total' => (float) ($row['Amount'] ?? $row[$k['net_total']] ?? $row[$k['total']]
+                // ${QT Thailand.Amount}: ใน subform ป้าย "Amount" คือ field Total (= ราคา × จำนวน ก่อนภาษี)
+                'total' => (float) ($row[$k['total']] ?? $row['Amount'] ?? $row[$k['net_total']]
                     ?? ((float) ($row[$k['quantity']] ?? 0) * (float) ($row[$k['list_price']] ?? 0))),
                 'recurring_amount' => isset($row[$k['recurring_amount']]) && $row[$k['recurring_amount']] !== null
                     ? (float) $row[$k['recurring_amount']]
