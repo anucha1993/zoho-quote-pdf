@@ -283,15 +283,19 @@ class QuoteData implements PrintableRecord
      */
     public function salesName(): string
     {
-        $nickname = (string) ($this->employee[$this->custom['employee_nickname'] ?? 'Nickname'] ?? '');
+        $nickname = trim((string) ($this->employee[$this->custom['employee_nickname'] ?? 'Nickname'] ?? ''));
 
         $name = $this->joinParts([
             $this->custom('sales_first_name'),
             $this->custom('sales_last_name'),
-            $nickname,
         ]);
 
-        return $name !== '' ? $name : $this->ownerName();
+        if ($name === '') {
+            return $this->ownerName();
+        }
+
+        // ชื่อเล่นใส่วงเล็บต่อท้าย เช่น "มณฑิรา ทองฤทธิ์ (โบว์)"
+        return $nickname !== '' ? "{$name} ({$nickname})" : $name;
     }
 
     /* ------------------------------------------------------------------ */

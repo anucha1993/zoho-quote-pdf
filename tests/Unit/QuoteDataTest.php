@@ -47,6 +47,15 @@ class QuoteDataTest extends TestCase
         $this->assertSame('เงื่อนไขการชำระเงิน<br>ชื่อจริง', $q->paymentTerms());
     }
 
+    public function test_sales_name_puts_nickname_in_parentheses(): void
+    {
+        $quote = ['First_Name' => 'มณฑิรา', 'Last_Name' => 'ทองฤทธิ์', 'Owner' => ['name' => 'Owner X']];
+
+        $this->assertSame('มณฑิรา ทองฤทธิ์ (โบว์)', (new QuoteData($quote, null, null, null, ['Nickname' => 'โบว์']))->salesName());
+        $this->assertSame('มณฑิรา ทองฤทธิ์', (new QuoteData($quote))->salesName());
+        $this->assertSame('Owner X', (new QuoteData(['Owner' => ['name' => 'Owner X']], null, null, null, ['Nickname' => 'โบว์']))->salesName());
+    }
+
     public function test_billing_address_falls_back_to_account_when_quote_address_is_empty(): void
     {
         $account = ['Billing_Street' => '89/1 หมู่ 4 ต.หลักสาม', 'Billing_City' => 'อ.บ้านแพ้ว', 'Billing_State' => 'จ.สมุทรสาคร', 'Billing_Code' => '74120'];

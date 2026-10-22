@@ -25,9 +25,22 @@
     a.btn:hover { filter: brightness(0.95); }
     .hint { font-size: 12px; color: var(--muted); margin-top: 20px; line-height: 1.5; }
     .tag { display: inline-block; font-size: 11px; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 0 7px; margin-left: 4px; vertical-align: middle; }
-    section.preview { flex: 1; padding: 12px; min-width: 0; }
+    section.preview { flex: 1; padding: 12px; min-width: 0; position: relative; }
     iframe { width: 100%; height: 100%; border: 1px solid var(--line); background: #fff; }
-    .loading { position: absolute; margin: 12px; color: var(--muted); font-size: 13px; }
+
+    /* overlay ตอนกำลังสร้าง PDF ของฟอร์มที่เลือก: skeleton หน้ากระดาษ + spinner */
+    .loading { position: absolute; inset: 12px; background: #f7f8fa; border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 48px; z-index: 2; }
+    .loading[hidden] { display: none; }
+    .spinner { width: 36px; height: 36px; border: 4px solid #d6dbe3; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading .msg { margin-top: 14px; font-size: 15px; color: var(--text); font-weight: 600; }
+    .loading .sub { margin-top: 4px; font-size: 13px; color: var(--muted); }
+    .skeleton { width: min(560px, 90%); margin-top: 28px; background: #fff; border: 1px solid var(--line); padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .sk { height: 12px; border-radius: 4px; background: linear-gradient(90deg, #e9ecf1 25%, #f4f6f9 50%, #e9ecf1 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; margin-bottom: 12px; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .sk.h { height: 56px; margin-bottom: 20px; }
+    .sk.w60 { width: 60%; } .sk.w80 { width: 80%; } .sk.w40 { width: 40%; }
+    .sk.table { height: 120px; margin-top: 18px; }
     @media (max-width: 760px) {
         main { flex-direction: column; }
         aside { width: auto; flex: none; border-right: 0; border-bottom: 1px solid var(--line); }
@@ -71,7 +84,17 @@
         </p>
     </aside>
     <section class="preview">
-        <span class="loading" id="loading">กำลังสร้าง PDF…</span>
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div class="msg">กำลังสร้าง PDF <span id="loading-form"></span>…</div>
+            <div class="sub">ดึงข้อมูลล่าสุดจาก Zoho CRM และจัดหน้าเอกสาร (ครั้งแรกอาจใช้เวลาสักครู่)</div>
+            <div class="skeleton" aria-hidden="true">
+                <div class="sk h"></div>
+                <div class="sk w80"></div><div class="sk w60"></div><div class="sk w40"></div>
+                <div class="sk table"></div>
+                <div class="sk w60"></div><div class="sk w80"></div>
+            </div>
+        </div>
         <iframe id="preview" title="PDF preview"></iframe>
     </section>
 </main>
@@ -83,13 +106,16 @@
         var dl = document.getElementById('download');
         var desc = document.getElementById('desc');
         var loading = document.getElementById('loading');
+        var loadingForm = document.getElementById('loading-form');
 
         function apply() {
             var opt = sel.options[sel.selectedIndex];
             desc.textContent = opt.getAttribute('data-label') || '';
             open.href = opt.getAttribute('data-view');
             dl.href = opt.getAttribute('data-download');
-            loading.style.display = '';
+            loadingForm.textContent = opt.value;
+            loading.hidden = false;
+            sel.disabled = true;
             // โหลด PDF ของฟอร์มที่เลือกใหม่ทันที: ใส่ค่าเวลาใน query กัน browser ใช้ไฟล์เดิมใน cache
             // (#toolbar=1 ให้ viewer ของเบราว์เซอร์แสดงปุ่มพิมพ์/บันทึก)
             var url = opt.getAttribute('data-view') + '?v=' + Date.now() + '#toolbar=1&view=FitH';
@@ -97,7 +123,11 @@
             setTimeout(function () { frame.src = url; }, 0);
         }
 
-        frame.addEventListener('load', function () { loading.style.display = 'none'; });
+        function done() { loading.hidden = true; sel.disabled = false; }
+        frame.addEventListener('load', done);
+        // กันกรณี viewer ไม่ยิง load event (บางเบราว์เซอร์) → ซ่อน overlay เองหลัง 90 วินาที
+        var guard = null;
+        sel.addEventListener('change', function () { clearTimeout(guard); guard = setTimeout(done, 90000); });
         sel.addEventListener('change', apply);
         sel.addEventListener('input', apply);
         apply();

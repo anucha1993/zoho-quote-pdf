@@ -195,14 +195,20 @@ class DealData implements PrintableRecord
      */
     public function openerName(): string
     {
-        $nickname = (string) ($this->employee[config('zoho.fields.custom.employee_nickname', 'Nickname')] ?? '');
+        $nickname = trim((string) ($this->employee[config('zoho.fields.custom.employee_nickname', 'Nickname')] ?? ''));
         $parts = array_filter([
             $this->text($this->f['opener_first_name'] ?? 'field50'),
             $this->text($this->f['opener_last_name'] ?? 'field51'),
-            $nickname,
         ], fn ($v) => $v !== '');
 
-        return $parts !== [] ? implode(' ', $parts) : (string) ($this->deal['Owner']['name'] ?? '');
+        if ($parts === []) {
+            return (string) ($this->deal['Owner']['name'] ?? '');
+        }
+
+        // ชื่อเล่นใส่วงเล็บต่อท้าย เช่น "มณฑิรา ทองฤทธิ์ (โบว์)"
+        $name = implode(' ', $parts);
+
+        return $nickname !== '' ? "{$name} ({$nickname})" : $name;
     }
 
     public function startDate(): ?Carbon
