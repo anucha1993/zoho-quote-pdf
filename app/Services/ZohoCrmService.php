@@ -174,6 +174,44 @@ class ZohoCrmService
     }
 
     /**
+     * ดึง Deal พร้อม Account / Contact / พนักงานผู้เปิดใบงาน (lookup รหัสพนักงาน → Staffs)
+     *
+     * @return array{deal: array, account: ?array, contact: ?array, employee: ?array}
+     *
+     * @throws QuoteNotFoundException|ZohoApiException
+     */
+    public function getDealWithRelations(string $id): array
+    {
+        $deal = $this->getRecord('Deals', $id);
+
+        if ($deal === null) {
+            throw new QuoteNotFoundException("Deal {$id} not found");
+        }
+
+        $deal = $this->fillTruncatedRichText('Deals', $deal);
+        $f = config('zoho.deal_fields', []);
+        $fetch = $this->config['fetch_related'];
+
+        $account = $contact = $employee = null;
+
+        if (($fetch['account'] ?? false) && ! empty($deal['Account_Name']['id'])) {
+            $account = $this->tryGet(fn () => $this->getRecord('Accounts', $deal['Account_Name']['id']));
+        }
+
+        if (($fetch['contact'] ?? false) && ! empty($deal['Contact_Name']['id'])) {
+            $contact = $this->tryGet(fn () => $this->getRecord('Contacts', $deal['Contact_Name']['id']));
+        }
+
+        $lookup = $f['opener_lookup'] ?? 'field49';
+        $module = $this->config['fields']['custom']['employee_module'] ?? 'Staffs';
+        if (($fetch['employee'] ?? false) && ! empty($deal[$lookup]['id'])) {
+            $employee = $this->tryGet(fn () => $this->getRecord($module, $deal[$lookup]['id']));
+        }
+
+        return compact('deal', 'account', 'contact', 'employee');
+    }
+
+    /**
      * ดึง record ตาม module/id — คืน null เมื่อไม่พบ (Zoho ตอบ 204 หรือ 404)
      *
      * @return array<string, mixed>|null

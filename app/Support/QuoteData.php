@@ -10,7 +10,7 @@ use Carbon\Carbon;
  * ทุก key ของ field อ่านจาก config('zoho.fields') เพื่อให้แก้ API name ได้ที่เดียว
  * ชื่อ method อิงตาม merge field ในแบบฟอร์ม Excel ต้นแบบ (sheet "คนเมียวดี (เขียว-แดง)")
  */
-class QuoteData
+class QuoteData implements PrintableRecord
 {
     protected array $f;
 
@@ -223,6 +223,11 @@ class QuoteData
         return $name !== '' ? $name : $this->ownerName();
     }
 
+    public function employeeRecord(): ?array
+    {
+        return $this->employee;
+    }
+
     /**
      * File_Id__s ของรูปลายเซ็นพนักงานขาย (image upload field "Image Sign" ใน module Staffs ผ่าน lookup รหัสพนักงาน)
      * null = ไม่มีรูป
@@ -290,6 +295,8 @@ class QuoteData
                 // ${QT Thailand.S.NO} = Sequence_Number ของ subform
                 'no' => (int) ($row['Sequence_Number'] ?? $row['S_NO'] ?? $i + 1),
                 'name' => (string) $name,
+                // ชื่อสินค้าภาษาจีน (field "Product Name (CN)" ใน subform) — ฟอร์ม FA-SA-CN แสดงใต้ชื่อไทย
+                'name_cn' => trim((string) ($row['Product_Name_CN'] ?? '')),
                 'code' => (string) (is_array($product) ? ($product['Product_Code'] ?? '') : ''),
                 'description' => (string) ($row[$k['description']] ?? $row['Product_Description'] ?? ''),
                 'quantity' => (float) ($row[$k['quantity']] ?? 0),

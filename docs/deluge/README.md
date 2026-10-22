@@ -47,6 +47,15 @@ https://pdf.trackingmouthefirst.com/FA-SA-TH/${Quotes.Quote Id}?download=1
 ตั้งค่า `Quote PDF URL` = `https://pdf.trackingmouthefirst.com/${Quotes.Quote Id}`
 (ไม่ต้องใช้ Deluge เลย เพราะไม่ต้องคำนวณ signature)
 
+## ฟอร์มใบงาน (module Deals): Deal Information & Tracking
+
+สร้าง Custom Button ใน **Deals** (ไม่ใช่ Quotes) แบบ Invoke a URL:
+```
+https://pdf.trackingmouthefirst.com/TRACKING/${Deals.Deal Id}
+```
+ฟอร์มนี้ดึงข้อมูลจาก Deal (ชื่อบริษัท ผู้ติดต่อ Job Code จำนวนแรงงาน ค่าใช้จ่าย) + subform Tracking System
+และไม่ปรากฏในหน้าเลือกฟอร์มของใบเสนอราคา
+
 ## วิธีที่ 2 (ปลอดภัยกว่า): ลิงก์แบบมี signature
 
 เหมาะกับลิงก์ที่ส่งให้ลูกค้าภายนอก เพราะเดา URL ไม่ได้แม้รู้ record ID

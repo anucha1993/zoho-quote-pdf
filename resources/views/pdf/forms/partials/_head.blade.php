@@ -39,7 +39,17 @@
     .bb-thick { border-bottom: 1.1pt solid #000; }
 
     .fill-pink { background: #E6B8B7; }
+    .fill-subject { background: {{ $doc['subject_fill'] ?? '#E6B8B7' }}; }
     .fill-grey { background: #D9D9D9; }
+
+    /* อักษรจีนที่ mPDF ตรวจพบ (autoScriptToLang → <span lang="und-Hans" class="lang_und-Hans">) ใช้ฟอนต์ CJK
+       และย่อขนาดลง (cjk_scale) เพราะ SimSun ที่ pt เท่ากันดูใหญ่กว่าตัวไทยของ Angsana New มาก */
+    @if(!empty($doc['cjk_font_available']))
+    .lang_und-Hans, .lang_und-Hant, .lang_zh, :lang(und-Hans), :lang(und-Hant), :lang(zh) {
+        font-family: '{{ $doc['cjk_font'] }}';
+        font-size: {{ (int) round(($doc['cjk_scale'] ?? 0.75) * 100) }}%;
+    }
+    @endif
 
     /* ขนาดตัวอักษร 3 ระดับให้สม่ำเสมอ: 13pt ทั่วไป, 14pt รายการสินค้า, 16pt หัวข้อบริการ (ป้ายรอง 11pt) */
     .f24 { font-size: 16pt; }

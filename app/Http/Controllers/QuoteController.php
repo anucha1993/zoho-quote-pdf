@@ -6,9 +6,9 @@ use App\Exceptions\QuoteNotFoundException;
 use App\Exceptions\ZohoApiException;
 use App\Services\QuotePdfService;
 use App\Services\ZohoCrmService;
+use App\Support\PrintableRecord;
 use App\Support\QuoteData;
 use App\Support\QuoteForm;
-use App\Support\QuoteLink;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -44,8 +44,10 @@ class QuoteController extends Controller
         }
 
         try {
-            $quote = $this->pdf->load($id);
-            $quoteForm = $this->resolveForm($formSlug, $quote);
+            // ฟอร์มที่รู้ล่วงหน้า (ไม่ใช่ auto) โหลดข้อมูลตาม module ของฟอร์ม (Quotes / Deals)
+            $known = QuoteForm::isAuto($formSlug) ? null : QuoteForm::find($formSlug);
+            $quote = $this->pdf->load($id, $known);
+            $quoteForm = $known ?? $this->resolveForm($formSlug, $quote);
 
             // ?refresh=<QUOTE_LINK_SECRET> → ทิ้ง PDF ที่ cache ไว้แล้วสร้างใหม่ (ใช้ตอนแก้ปัญหาบนเซิร์ฟเวอร์)
             $refresh = (string) $request->query('refresh', '');
@@ -100,9 +102,11 @@ class QuoteController extends Controller
 
         return response()->view('picker', [
             'quote' => $quote,
-            'forms' => QuoteForm::all(),
+            // เฉพาะฟอร์มของ Quotes (ฟอร์ม Deals เช่น TRACKING ใช้ URL /TRACKING/{deal id} แยกต่างหาก)
+            'forms' => QuoteForm::allForModule('Quotes'),
             'suggested' => $suggested,
-            'urlFor' => fn (QuoteForm $form, bool $download = false) => QuoteLink::shortUrl($id, $download, $form->slug),
+            // ใช้ลิงก์สัมพัทธ์ (โฮสต์เดียวกับหน้านี้) ไม่ใช้ QUOTE_BASE_URL เพื่อให้ทดสอบบน localhost ได้โดยไม่ชี้ไปเซิร์ฟเวอร์จริง
+            'urlFor' => fn (QuoteForm $form, bool $download = false) => '/'.rawurlencode($form->slug).'/'.$id.($download ? '?download=1' : ''),
         ], 200, ['X-Robots-Tag' => 'noindex, nofollow']);
     }
 
@@ -119,8 +123,9 @@ class QuoteController extends Controller
         }
 
         try {
-            $quote = $this->pdf->load($id);
-            $quoteForm = $this->resolveForm($formSlug, $quote);
+            $known = QuoteForm::isAuto($formSlug) ? null : QuoteForm::find($formSlug);
+            $quote = $this->pdf->load($id, $known);
+            $quoteForm = $known ?? $this->resolveForm($formSlug, $quote);
             $binary = $this->pdf->getPdfBinary($quote, $quoteForm);
             $result = $this->zoho->uploadAttachment($id, $binary, $quote->filename());
         } catch (QuoteNotFoundException) {
@@ -141,9 +146,9 @@ class QuoteController extends Controller
         ]);
     }
 
-    protected function resolveForm(?string $slug, QuoteData $quote): QuoteForm
+    protected function resolveForm(?string $slug, PrintableRecord $quote): QuoteForm
     {
-        if (QuoteForm::isAuto($slug)) {
+        if (QuoteForm::isAuto($slug) && $quote instanceof QuoteData) {
             return QuoteForm::resolveAuto($quote);
         }
 

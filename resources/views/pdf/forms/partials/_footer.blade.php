@@ -16,7 +16,7 @@
         <tr>
             {{-- เลขหน้าอยู่กึ่งกลางหน้ากระดาษพอดี: ช่องว่างซ้าย 21.6% + ช่อง 56.8% (จุดกึ่งกลาง = 50%) --}}
             <td style="width: 21.6%; padding: 0;"></td>
-            <td style="width: 56.8%; padding: 1pt 0 0 0; text-align: center; font-size: 11.5pt; color: #444; white-space: nowrap;">หน้า {PAGENO}/{nbpg}</td>
+            <td style="width: 56.8%; padding: 1pt 0 0 0; text-align: center; font-size: 11.5pt; color: #444; white-space: nowrap;">{!! $L['page'] ?? 'หน้า' !!} {PAGENO}/{nbpg}</td>
             <td style="width: 17%; padding: 1pt 0 0 0; text-align: center; font-size: 13pt; white-space: nowrap;">{{ $q->isoCode() }}</td>
             <td style="width: 4.6%; padding: 0;"></td>
         </tr>

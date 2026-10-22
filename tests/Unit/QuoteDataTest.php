@@ -47,6 +47,20 @@ class QuoteDataTest extends TestCase
         $this->assertSame('เงื่อนไขการชำระเงิน<br>ชื่อจริง', $q->paymentTerms());
     }
 
+    public function test_items_include_chinese_product_name_when_present(): void
+    {
+        $q = new QuoteData([
+            'Quoted_Items' => [
+                ['Product_Name' => ['name' => 'ค่าบริการ'], 'Product_Name_CN' => '服务费用', 'Quantity' => 1, 'List_Price' => 100, 'Total' => 100],
+                ['Product_Name' => ['name' => 'ค่าเอกสาร'], 'Product_Name_CN' => null, 'Quantity' => 1, 'List_Price' => 50, 'Total' => 50],
+            ],
+        ]);
+
+        $items = $q->items();
+        $this->assertSame('服务费用', $items[0]['name_cn']);
+        $this->assertSame('', $items[1]['name_cn']);
+    }
+
     public function test_destination_items_and_totals_map_the_d_fields(): void
     {
         $q = new QuoteData([

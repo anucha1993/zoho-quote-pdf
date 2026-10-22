@@ -371,6 +371,79 @@ class QuotePdfTest extends TestCase
         $this->assertFileDoesNotExist(storage_path('app/signatures/u1noscope.png'));
     }
 
+    public function test_tracking_form_renders_from_deals_module(): void
+    {
+        $deal = [
+            'id' => '7000000000000000001',
+            'Deal_Name' => 'บริษัท ทดสอบ จำกัด - MOU',
+            'Job_Code_Auto_Number' => 'JOB-2026-0001',
+            'M5L_Job_Code' => 'M5L-0001',
+            'Modified_Time' => '2026-10-22T10:00:00+07:00',
+            'Account_Name' => ['id' => '6123456000000222222', 'name' => 'บริษัท ทดสอบ จำกัด'],
+            'Contact_Name' => ['id' => '6123456000000333333', 'name' => 'สมชาย ใจดี'],
+            'Document_Group' => 'NM',
+            'MOU_Service' => ['นำเข้า MOU'],
+            'field3' => 10, 'field2' => 5, 'field5' => 15, 'field48' => ['เมียนมา'],
+            'field55' => 1000, 'field57' => 15000, 'field54' => 2000, 'field56' => 30000,
+            'field59' => ['ตรวจ 6 โรค'], 'field60' => ['6 เดือน'],
+            'field50' => 'ปิยนุช', 'field51' => 'จันทร์วงค์',
+            'ISO' => ['id' => '1', 'name' => 'FA-SA-02-100'],
+            'Tracking_System' => [
+                ['LinkingModule5_Serial_Number' => '1', 'Job_Status' => 'เปิดใบงาน', 'Tracking_Status' => 'เสร็จสิ้น', 'Expected_Date' => '2026-10-01', 'Actual_Date' => '2026-10-02', 'Estimated_Days' => 1, 'Actual' => 1],
+                ['LinkingModule5_Serial_Number' => '2', 'Job_Status' => 'ยื่นดีมานด์', 'Tracking_Status' => 'กำลังดำเนินการ', 'Expected_Date' => '2026-10-05', 'Estimated_Days' => 5],
+            ],
+        ];
+
+        Http::fake([
+            'accounts.zoho.com/*' => Http::response(['access_token' => 'tok'], 200),
+            'www.zohoapis.com/crm/v8/Deals/'.$deal['id'] => Http::response(['data' => [$deal]], 200),
+            'www.zohoapis.com/crm/v8/Contacts/*' => Http::response(['data' => [['id' => '6123456000000333333', 'Full_Name' => 'สมชาย ใจดี', 'Phone' => '02-123-4567']]], 200),
+            'www.zohoapis.com/*' => Http::response('', 204),
+        ]);
+
+        $response = $this->get('/TRACKING/'.$deal['id'])->assertOk()->assertHeader('X-Quote-Form', 'TRACKING');
+        $this->assertStringContainsString('JOB-2026-0001.pdf', $response->headers->get('Content-Disposition'));
+        $this->assertStringStartsWith('%PDF-', file_get_contents($response->baseResponse->getFile()->getPathname()));
+
+        // ไม่ควรเรียก Quotes เลย
+        Http::assertNotSent(fn ($req) => str_contains($req->url(), '/crm/v8/Quotes/'));
+    }
+
+    public function test_cnde_form_renders_destination_page_in_chinese_layout(): void
+    {
+        $quote = $this->sampleQuote();
+        $quote['QT_Destination'] = [
+            ['LinkingModule1_Serial_Number' => '1', 'Product_Name_D' => ['name' => 'ค่าเซ็นต์สัญญา'], 'Quantity_D' => 1, 'List_Price_D' => 300, 'Amount_D' => 300],
+        ];
+        $quote['Total_Amount_D'] = 300;
+        $quote['Grand_Total_D'] = 300;
+
+        Http::fake([
+            'accounts.zoho.com/*' => Http::response(['access_token' => 'tok'], 200),
+            'www.zohoapis.com/crm/v8/Quotes/'.self::QUOTE_ID => Http::response(['data' => [$quote]], 200),
+            'www.zohoapis.com/*' => Http::response('', 204),
+        ]);
+
+        $response = $this->get('/FA-SA-CNDE/'.self::QUOTE_ID)->assertOk()->assertHeader('X-Quote-Form', 'FA-SA-CNDE');
+        $pdf = file_get_contents($response->baseResponse->getFile()->getPathname());
+
+        $this->assertGreaterThanOrEqual(3, preg_match_all('/\/Type\s*\/Page[^s]/', $pdf));
+    }
+
+    public function test_cn_form_renders_bilingual_pdf(): void
+    {
+        $this->fakeZoho();
+
+        $response = $this->get('/FA-SA-CN/'.self::QUOTE_ID)->assertOk()->assertHeader('X-Quote-Form', 'FA-SA-CN');
+        $pdf = file_get_contents($response->baseResponse->getFile()->getPathname());
+
+        $this->assertStringStartsWith('%PDF-', $pdf);
+        // ฟอนต์จีน (SimSun) ถูกฝังเมื่อมีไฟล์ resources/fonts/simsun.ttc
+        if (is_file(resource_path('fonts/simsun.ttc'))) {
+            $this->assertMatchesRegularExpression('/SimSun/i', $pdf);
+        }
+    }
+
     public function test_unknown_form_returns_404_without_calling_zoho(): void
     {
         Http::fake();

@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Pdf\ThaiLanguageToFont;
+use App\Support\DealData;
+use App\Support\PrintableRecord;
 use App\Support\QuoteData;
 use App\Support\QuoteForm;
 use App\Support\QuoteLink;
@@ -30,8 +32,15 @@ class QuotePdfService
     /**
      * โหลดข้อมูล Quote (พร้อม related) และห่อเป็น QuoteData
      */
-    public function load(string $id): QuoteData
+    public function load(string $id, ?QuoteForm $form = null): PrintableRecord
     {
+        // ฟอร์มของ module Deals (เช่น TRACKING) → DealData, นอกนั้น → QuoteData
+        if ($form !== null && strcasecmp($form->module(), 'Deals') === 0) {
+            $data = $this->zoho->getDealWithRelations($id);
+
+            return new DealData($data['deal'], $data['account'], $data['contact'], $data['employee']);
+        }
+
         $data = $this->zoho->getQuoteWithRelations($id);
 
         return new QuoteData(
@@ -46,7 +55,7 @@ class QuotePdfService
     /**
      * คืน path ของไฟล์ PDF — สร้างใหม่เฉพาะเมื่อยังไม่มีไฟล์ของเวอร์ชันนี้ (cache miss)
      */
-    public function getPdfPath(QuoteData $quote, ?QuoteForm $form = null): string
+    public function getPdfPath(PrintableRecord $quote, ?QuoteForm $form = null): string
     {
         $form ??= QuoteForm::default();
         $path = $this->cachePath($quote, $form);
@@ -81,7 +90,7 @@ class QuotePdfService
     /**
      * ลบไฟล์ PDF ที่ cache ไว้ของ Quote/ฟอร์มนี้ (ทุกเวอร์ชัน) เพื่อบังคับสร้างใหม่ใน request ถัดไป
      */
-    public function forget(QuoteData $quote, ?QuoteForm $form = null): int
+    public function forget(PrintableRecord $quote, ?QuoteForm $form = null): int
     {
         $form ??= QuoteForm::default();
         $dir = storage_path('app/'.trim(config('quote.storage_dir', 'quotes'), '/'));
@@ -100,7 +109,7 @@ class QuotePdfService
     /**
      * อ่านเนื้อหา PDF (ใช้ cache ถ้ามี)
      */
-    public function getPdfBinary(QuoteData $quote, ?QuoteForm $form = null): string
+    public function getPdfBinary(PrintableRecord $quote, ?QuoteForm $form = null): string
     {
         return (string) file_get_contents($this->getPdfPath($quote, $form));
     }
@@ -108,9 +117,12 @@ class QuotePdfService
     /**
      * สร้าง PDF จาก Blade view ของฟอร์มด้วย mPDF และคืนค่าเป็น binary string
      */
-    public function render(QuoteData $quote, ?QuoteForm $form = null): string
+    public function render(PrintableRecord $quote, ?QuoteForm $form = null): string
     {
         $form ??= QuoteForm::default();
+
+        $docOptions = array_merge(config('quote.document'), $form->option('document', []));
+        $docOptions['cjk_font_available'] = $this->cjkFontFile($docOptions) !== null;
 
         $html = View::make($form->view, [
             'q' => $quote,
@@ -118,7 +130,9 @@ class QuotePdfService
             'company' => array_merge(config('quote.company'), $form->option('company', [])),
             'approver' => array_merge(config('quote.approver'), $form->option('approver', [])),
             'texts' => array_merge(config('quote.texts'), $form->option('texts', [])),
-            'doc' => array_merge(config('quote.document'), $form->option('document', [])),
+            // ป้ายช่องในฟอร์ม (ไทย/อังกฤษ หรือ ไทย/จีน ตามฟอร์ม)
+            'L' => array_merge(config('quote.labels', []), $form->option('labels', [])),
+            'doc' => $docOptions,
             'formCode' => $form->option('form_code', config('quote.form_code')),
             // รูปลายเซ็นพนักงานขาย (ดาวน์โหลดจาก Staffs.Image_Sing แล้ว cache ไว้) — null ถ้าไม่มี/ดาวน์โหลดไม่ได้
             'salesSignature' => $this->salesSignaturePath($quote),
@@ -268,7 +282,7 @@ class QuotePdfService
     /**
      * cache key: quote:{id}:{Modified_Time}:{form}:{templateVersion}
      */
-    public function cacheKey(QuoteData $quote, ?QuoteForm $form = null): string
+    public function cacheKey(PrintableRecord $quote, ?QuoteForm $form = null): string
     {
         $form ??= QuoteForm::default();
 
@@ -289,12 +303,12 @@ class QuotePdfService
     /** request ล่าสุดใช้ไฟล์ PDF จาก cache หรือไม่ (header X-Quote-Cache) */
     public bool $lastRenderWasCached = false;
 
-    public function salesSignaturePath(QuoteData $quote): ?string
+    public function salesSignaturePath(PrintableRecord $quote): ?string
     {
         $fileId = $quote->salesSignatureFileId();
 
         if ($fileId === null || ! preg_match('/^[A-Za-z0-9_-]+$/', $fileId)) {
-            $this->signatureStatus = $quote->employee === null ? 'no-staff-record' : 'no-image-field';
+            $this->signatureStatus = $quote->employeeRecord() === null ? 'no-staff-record' : 'no-image-field';
 
             return null;
         }
@@ -371,7 +385,7 @@ class QuotePdfService
     /**
      * path ไฟล์ใน storage/app/quotes/ — {id}_{form}_{hash}.pdf
      */
-    public function cachePath(QuoteData $quote, ?QuoteForm $form = null): string
+    public function cachePath(PrintableRecord $quote, ?QuoteForm $form = null): string
     {
         $form ??= QuoteForm::default();
         $dir = storage_path('app/'.trim(config('quote.storage_dir', 'quotes'), '/'));
@@ -396,6 +410,17 @@ class QuotePdfService
 
         $defaultConfig = (new ConfigVariables)->getDefaults();
         $defaultFontConfig = (new FontVariables)->getDefaults();
+
+        // ฟอนต์อักษรจีน (ถ้ามีไฟล์): SimSun เป็น TrueType Collection → ใช้ face แรก (TTCfontID = 1)
+        $cjkFont = null;
+        $cjkFontData = [];
+        if (($cjkFile = $this->cjkFontFile($doc)) !== null) {
+            $cjkFont = $doc['cjk_font'];
+            // mPDF อ่าน TTCfontID แยกตาม style key (R/B/I/BI)
+            $cjkFontData[$cjkFont] = str_ends_with(strtolower($cjkFile), '.ttc')
+                ? ['R' => $cjkFile, 'TTCfontID' => ['R' => 1]]
+                : ['R' => $cjkFile];
+        }
 
         $mpdf = new Mpdf([
             'mode' => 'utf-8',
@@ -430,14 +455,14 @@ class QuotePdfService
                     'useOTL' => 0xFF,      // เปิด OpenType layout ให้สระ/วรรณยุกต์วางตำแหน่งถูกต้อง
                     'useKashida' => 75,
                 ],
-            ],
+            ] + $cjkFontData,
             'default_font' => $font,
             'default_font_size' => (float) ($doc['font_size'] ?? 12),
 
             // ---- ภาษา/การตัดคำ ----
             'autoScriptToLang' => true,
             'autoLangToFont' => true,
-            'languageToFont' => new ThaiLanguageToFont($font), // ให้ th → ฟอนต์ที่เลือก แทน garuda
+            'languageToFont' => new ThaiLanguageToFont($font, $cjkFont), // th → ฟอนต์ไทยที่เลือก, อักษรจีน → SimSun
             'useDictionaryLBR' => true,                         // ตัดคำไทยด้วย dictionary ของ mPDF
             'useSubstitutions' => false,
             'shrink_tables_to_fit' => 1,
@@ -447,6 +472,26 @@ class QuotePdfService
         $mpdf->SetDisplayMode('fullpage');
 
         return $mpdf;
+    }
+
+    /**
+     * ชื่อไฟล์ฟอนต์ CJK ใน resources/fonts (simsun.ttc / <cjk_font>.ttf) — null ถ้าไม่มี
+     */
+    protected function cjkFontFile(array $doc): ?string
+    {
+        $name = (string) ($doc['cjk_font'] ?? '');
+
+        if ($name === '') {
+            return null;
+        }
+
+        foreach ([$name.'.ttc', $name.'.ttf', $name.'.otf'] as $candidate) {
+            if (is_file(resource_path('fonts/'.$candidate))) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 
     /**

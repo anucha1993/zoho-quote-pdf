@@ -13,7 +13,7 @@ class FormLayout
     /**
      * @return array<string, mixed>
      */
-    public static function vars(QuoteData $q, array $doc, array $company): array
+    public static function vars(PrintableRecord $q, array $doc, array $company): array
     {
         // สัดส่วนคอลัมน์ Excel (A..L = 157.8 หน่วย) → เปอร์เซ็นต์ของความกว้างกระดาษ
         // (คอลัมน์ I ขยายเล็กน้อยจาก 12.58 → 14.3 เพื่อให้ "ใบเสนอราคาเลขที่ :" อยู่บรรทัดเดียว)

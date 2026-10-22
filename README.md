@@ -137,8 +137,9 @@ Rich Text Fields API (`/actions/fetch_full_data`) ให้อัตโนมั
 
 Scope ที่ Self Client ต้องมี:
 ```
-ZohoCRM.modules.quotes.READ,ZohoCRM.modules.accounts.READ,ZohoCRM.modules.contacts.READ,ZohoCRM.users.READ,ZohoCRM.modules.attachments.CREATE,ZohoCRM.modules.custom.READ,ZohoCRM.settings.fields.READ,ZohoCRM.Files.READ
+ZohoCRM.modules.quotes.READ,ZohoCRM.modules.deals.READ,ZohoCRM.modules.accounts.READ,ZohoCRM.modules.contacts.READ,ZohoCRM.users.READ,ZohoCRM.modules.attachments.CREATE,ZohoCRM.modules.custom.READ,ZohoCRM.settings.fields.READ,ZohoCRM.Files.READ
 ```
+(`modules.deals.READ` ใช้กับฟอร์มใบงาน TRACKING ที่อ่านจาก module Deals)
 (`modules.custom.READ` ใช้อ่าน module Staffs เพื่อดึงชื่อเล่น, `settings.fields.READ` ใช้ตรวจ API name,
 `Files.READ` ใช้ดาวน์โหลดรูปลายเซ็นพนักงานขายจาก field "Image Sign" ของ Staffs — ถ้าไม่มี scope นี้
 เอกสารยังออกได้ แค่กล่องผู้เสนอขายไม่มีรูปลายเซ็น)
@@ -182,6 +183,11 @@ URL รูปแบบ `https://pdf.trackingmouthefirst.com/{ฟอร์ม}/{r
 |---|---|---|
 | `FA-SA-TH` | `resources/views/pdf/forms/fa-sa-th.blade.php` | ใบเสนอราคาภาษาไทย (ค่าเริ่มต้น) |
 | `FA-SA-THDE` | `resources/views/pdf/forms/fa-sa-thde.blade.php` | เหมือน FA-SA-TH + หน้า 2 ตาราง QT Destination (subform `QT_Destination`, ยอด `*_D`) |
+| `FA-SA-CN` | `resources/views/pdf/forms/fa-sa-cn.blade.php` | ไทย-จีน: ป้าย/ข้อความ 2 บรรทัด (คำแปลจาก `ex/FA-SA-CN.xlsx`) แถบหัวข้อสีเขียว ฟอนต์จีน SimSun (`resources/fonts/simsun.ttc` จาก Windows) |
+| `FA-SA-CNDE` | `resources/views/pdf/forms/fa-sa-cnde.blade.php` | FA-SA-CN + หน้า QT Destination (โครงเดียวกับ FA-SA-THDE) ใช้ config ชุดเดียวกับ FA-SA-CN ผ่าน `$cnForm` |
+
+ป้ายช่องทุกฟอร์มมาจาก `config/quote.php` → `labels` (ค่าเริ่มต้นไทย/อังกฤษ) และ override ต่อฟอร์มใน `forms[...]['labels']`
+ใส่ `<br>` เพื่อแสดง 2 บรรทัด เช่น ไทย + จีน (ข้อความจาก config ไม่ถูก escape)
 
 ทุกฟอร์มประกอบจาก partial ใน `resources/views/pdf/forms/partials/` (หัวกระดาษ, ข้อมูลลูกค้า, หัวข้อบริการ,
 ตารางรายการ+กล่องสรุปยอด, เงื่อนไข, ส่วนปิดท้าย, ท้ายกระดาษ) — แก้ partial ครั้งเดียวมีผลทุกฟอร์ม

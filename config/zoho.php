@@ -44,6 +44,34 @@ return [
     ],
 
     /*
+    | API name ของ field ใน module Deals (ฟอร์ม Deal Information & Tracking) — ตรวจจาก settings/fields เมื่อ 2026-10-22
+    */
+    'deal_fields' => [
+        'job_code' => 'Job_Code_Auto_Number',
+        'm5l_job_code' => 'M5L_Job_Code',
+        'iso' => 'ISO',                       // lookup → module ISO (ใช้ name)
+        'document_group' => 'Document_Group',
+        'mou_service' => 'MOU_Service',       // ประเภทใบงาน (multi-select)
+        'male' => 'field3',                   // แรงงานชาย (คน)
+        'female' => 'field2',                 // แรงงานหญิง (คน)
+        'total_workers' => 'field5',          // รวมจำนวนแรงงาน
+        'nationality' => 'field48',           // แรงงานสัญชาติ (multi-select)
+        'worker_cost' => 'field55',           // ระบุค่าใช้จ่ายแรงงาน ต่อ คน
+        'worker_cost_total' => 'field57',     // ค่าใช้จ่ายแรงงานรวม
+        'employer_cost' => 'field54',         // ระบุค่าใช้จ่ายนายจ้าง ต่อ คน
+        'employer_cost_total' => 'field56',   // ค่าใช้จ่ายนายจ้างรวม
+        'health_check' => 'field59',          // การตรวจสุขภาพแรงงาน
+        'health_insurance' => 'field60',      // ซื้อประกันสุขภาพ (เพิ่มเติม)
+        'remark' => 'Description',            // หมายเหตุ (ไม่มี field ชื่อ "หมายเหตุ" ใน Deals → ใช้ Description)
+        'remark_fallback' => 'field58',       // บันทึกฝ่ายขาย
+        'opener_first_name' => 'field50',     // ชื่อจริง (ผู้เปิดใบงาน)
+        'opener_last_name' => 'field51',      // นามสกุล
+        'opener_lookup' => 'field49',         // รหัสพนักงาน → Staffs (ชื่อเล่น/ลายเซ็น)
+        'start_date' => 'Start_Date',
+        'tracking_subform' => 'Tracking_System',
+    ],
+
+    /*
     | API name ของ field ใน module Quotes
     | ปรับให้ตรงกับ CRM จริง (ดูได้จาก Setup > Developer Space > APIs > API Names)
     */

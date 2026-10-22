@@ -6,6 +6,56 @@
 |--------------------------------------------------------------------------
 */
 
+/*
+| ฟอร์มไทย-จีน (FA-SA-CN) — ใช้ร่วมกับ FA-SA-CNDE ที่เพิ่มหน้า QT Destination
+*/
+$cnForm = [
+    'label' => 'ใบเสนอราคา ไทย-จีน (FA-SA-CN)',
+    'view' => 'pdf.forms.fa-sa-cn',
+    'document' => [
+        'subject_fill' => '#C5E0B4',   // แถบหัวข้อบริการสีเขียวตามต้นแบบ FA-SA-CN.xlsx
+    ],
+    // ป้ายในฟอร์ม: บรรทัดไทย + บรรทัดจีน (คำแปลจาก ex/FA-SA-CN.xlsx)
+    'labels' => [
+        'to' => 'เรียน<br>致',
+        'quote_no' => 'ใบเสนอราคาเลขที่&nbsp;:<br>报价单编号:',
+        'address' => 'ที่อยู่<br>地址',
+        'date' => 'วันที่เสนอราคา&nbsp;:<br>报价日期:',
+        // ป้ายยาวกว่าช่อง 31mm ที่ 13pt จึงย่อเป็น 11.5pt ให้อยู่บรรทัดเดียว
+        'sales' => '<span style="font-size: 11.5pt;">ฝ่ายขายผู้เสนอราคา&nbsp;:</span><br>报价人:',
+        'contact' => 'ติดต่อ<br>联系人',
+        'phone' => 'เบอร์โทรศัพท์&nbsp;:<br>联系方式:',
+        'col_no' => 'ลำดับที่<br>序号',
+        'col_desc' => 'รายการ<br>详细资料',
+        'col_price' => 'ราคา<br>价格',
+        'col_qty' => 'จำนวน<br>人数',
+        'col_amount' => 'จำนวนเงิน<br>金额',
+        'row_total' => 'ยอดรวม 小计',
+        'total_amount' => ['รวมเป็นเงิน', '合计'],
+        'total_discount' => ['ส่วนลด', '折扣'],
+        'total_tax' => ['ภาษีมูลค่าเพิ่ม 7%', '增值税 7%'],
+        'grand_total' => ['จำนวนเงินรวมทั้งสิ้น', '总合'],
+    ],
+    'texts' => [
+        'intro' => 'บริษัทนำคนต่างด้าวมาทำงานในประเทศ เดอะ เฟิร์ส กูด แมน กรุ๊ป จำกัด  ใคร่ขอเสนอราคา และ เงื่อนไข ตามรายละเอียด นี้<br>泰国第一人力资源集团有限公司报价以及服务条件如下:',
+        'closing' => [
+            'บริษัทนำคนต่างด้าวมาทำงานในประเทศ เดอะ เฟิร์ส กูด แมน กรุ๊ป จำกัด ใคร่ขอขอบพระคุณที่ไว้วางใจเรียกใช้บริการของเราด้วยดีเสมอมา',
+            '泰国第一人力资源集团有限公司感谢您一如既往对我们服务的信任',
+            'หลังจาก ลูกค้า/ผู้มีอำนาจลงนามได้ลงนามอนุมัติในเอกสารฉบับนี้แล้ว รบกวน ส่งแฟกซ์ หรือ อีเมล์ กลับมายัง',
+            '客户/授权签字人签署并批准本文件后，请将传真或电子邮件发回至',
+            'บริษัทนำคนต่างด้าวมาทำงานในประเทศ เดอะ เฟิร์ส กูด แมน กรุ๊ป จำกัด ด้วย เพื่อดำเนินการเอกสารในขั้นตอนต่อไป',
+            '泰国第一人力资源集团有限公司再处理下一步文件',
+        ],
+        'confirm_title' => 'การยืนยันการใช้บริการ / 服务确认',
+        'confirm_body' => 'ข้าพเจ้าตกลงสั่งซื้อตามรายการและยอมรับในเงื่อนไขที่เสนอมาทั้งหมด<br>本人接受所有提议的条款和条件',
+        'sign_customer' => 'ลูกค้าคนสำคัญ (ลงนาม/ประทับตรา)<br>客户(签名/盖章)',
+        'sign_sales' => 'ฝ่ายการตลาด/ผู้เสนอขาย<br>营销/报价人',
+    ],
+    'approver' => [
+        'title' => 'กรรมการผู้จัดการ/ผู้อนุมัติเสนอราคา<br>执行董事/价格核准人',
+    ],
+];
+
 return [
 
     // Secret สำหรับสร้าง/ตรวจ signature ของลิงก์ (ต้องตรงกับฝั่ง Deluge)
@@ -57,7 +107,26 @@ return [
                 'thailand_title' => env('QUOTE_THAILAND_TITLE', 'รายการค่าบริการในประเทศ (QT Thailand)'),
             ],
         ],
-        // 'FA-SA-CN' => ['label' => 'ใบเสนอราคา ภาษาจีน', 'view' => 'pdf.forms.fa-sa-cn'],
+        // ---- ฟอร์มของ module Deals (ใบงาน) — URL: /TRACKING/{deal id} ----
+        'TRACKING' => [
+            'label' => 'Deal Information & Tracking (ใบงาน)',
+            'view' => 'pdf.forms.tracking',
+            'module' => 'Deals',
+            'texts' => [
+                'tracking_title' => 'Deal Information & Tracking',
+                'sign_opener' => 'ผู้เปิดใบงาน',
+                'sign_approver' => 'ผู้อนุมัติ',
+            ],
+        ],
+        'FA-SA-CN' => $cnForm,
+        'FA-SA-CNDE' => array_replace_recursive($cnForm, [
+            'label' => 'ใบเสนอราคา ไทย-จีน + หน้า QT Destination',
+            'view' => 'pdf.forms.fa-sa-cnde',
+            'texts' => [
+                'destination_title' => 'รายการค่าบริการปลายทาง (QT Destination) 目的地服务费用',
+                'thailand_title' => 'รายการค่าบริการในประเทศ (QT Thailand) 泰国境内服务费用',
+            ],
+        ]),
     ],
 
     // Rate limit ต่อ IP (จำนวน request ต่อนาที)
@@ -98,6 +167,33 @@ return [
         'signature_height_pt' => (int) env('QUOTE_APPROVER_SIGNATURE_HEIGHT', 34),
     ],
 
+    /*
+    | ป้ายช่องต่าง ๆ ในฟอร์ม (ค่าเริ่มต้น = ไทย/อังกฤษ ตาม FA-SA-TH) — ฟอร์มอื่น override ได้ใน forms[...]['labels']
+    | ใส่ <br> ได้เพื่อแสดง 2 บรรทัด (เช่น ไทย + จีน) ค่าในนี้ถูก render แบบไม่ escape จึงต้องมาจาก config เท่านั้น
+    */
+    'labels' => [
+        'to' => 'เรียน',
+        'quote_no' => 'ใบเสนอราคาเลขที่&nbsp;:',
+        'address' => 'ที่อยู่',
+        'date' => 'วันที่&nbsp;:',
+        'sales' => 'ผู้เสนอราคา&nbsp;:',
+        'contact' => 'ติดต่อ',
+        'phone' => 'โทรศัพท์&nbsp;:',
+        'col_no' => 'ลำดับที่<br>ITEM',
+        'col_desc' => 'รายการ<br>DESCRIPTION',
+        'col_price' => 'ราคา<br>Price',
+        'col_qty' => 'จำนวน<br>Quantity',
+        'col_amount' => 'จำนวนเงิน<br>Amount',
+        // แถวสุดท้ายของตารางรายการ
+        'row_total' => 'ยอดรวม',
+        // กล่องสรุปยอด: [ป้ายซ้าย, ป้ายกลาง]
+        'total_amount' => ['รวมเป็นเงิน', 'Total Amount'],
+        'total_discount' => ['ส่วนลด', 'Total Discount'],
+        'total_tax' => ['ภาษีมูลค่าเพิ่ม 7%', 'Total Tax'],
+        'grand_total' => ['จำนวนเงินรวมทั้งสิ้น', 'Grand Total'],
+        'page' => 'หน้า',
+    ],
+
     // ข้อความคงที่ในแบบฟอร์ม (ตรงกับ sheet "คนเมียวดี (เขียว-แดง)")
     'texts' => [
         'intro' => 'บริษัทนำคนต่างด้าวมาทำงานในประเทศ เดอะ เฟิร์ส กูด แมน กรุ๊ป จำกัด  ใคร่ขอเสนอราคา และ เงื่อนไข ตามรายละเอียด นี้.-',
@@ -128,6 +224,12 @@ return [
         'margin_footer_mm' => 3,
         // ฟอนต์ตามต้นแบบ: Angsana New (มี fallback เป็น TH Sarabun New ถ้าไม่มีไฟล์)
         'font' => env('QUOTE_FONT', 'angsananew'),
+        // ฟอนต์อักษรจีน (ฟอร์ม FA-SA-CN): SimSun จาก Windows (resources/fonts/simsun.ttc) — ไม่มีไฟล์ = ใช้ค่าเริ่มต้นของ mPDF
+        'cjk_font' => env('QUOTE_CJK_FONT', 'simsun'),
+        // สัดส่วนขนาดอักษรจีนเทียบกับข้อความรอบข้าง (SimSun ดูใหญ่กว่า Angsana New) 0.75 = 75%
+        'cjk_scale' => (float) env('QUOTE_CJK_SCALE', 0.8),
+        // สีพื้นแถบหัวข้อบริการ (FA-SA-TH ชมพู, FA-SA-CN เขียว override ใน forms)
+        'subject_fill' => '#E6B8B7',
         'font_size' => 12,
         // จำนวนแถวรายการขั้นต่ำที่แสดงในตาราง (ต้นแบบมี 3 แถว) — ใช้เมื่อเอกสารจบในหน้าเดียว
         'min_item_rows' => (int) env('QUOTE_MIN_ITEM_ROWS', 0),

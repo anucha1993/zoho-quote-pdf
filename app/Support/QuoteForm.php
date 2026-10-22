@@ -112,6 +112,22 @@ class QuoteForm
         return (string) $this->option('label', $this->slug);
     }
 
+    /** module ของ Zoho ที่ฟอร์มนี้ใช้ข้อมูล: Quotes (ค่าเริ่มต้น) หรือ Deals */
+    public function module(): string
+    {
+        return (string) $this->option('module', 'Quotes');
+    }
+
+    /**
+     * รายการฟอร์มเฉพาะ module ที่กำหนด (ใช้ในหน้าเลือกฟอร์มของ Quote)
+     *
+     * @return self[]
+     */
+    public static function allForModule(string $module): array
+    {
+        return array_values(array_filter(self::all(), fn (self $f) => strcasecmp($f->module(), $module) === 0));
+    }
+
     /**
      * path ของไฟล์ Blade (ใช้คำนวณเวอร์ชัน template สำหรับ cache)
      */
