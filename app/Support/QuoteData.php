@@ -360,6 +360,83 @@ class QuoteData
     }
 
     /**
+     * ชุดยอดสำหรับกล่องสรุปยอดของตาราง QT Thailand
+     *
+     * @return array{amount: float, discount: float, tax: float, grand: float}
+     */
+    public function totals(): array
+    {
+        return [
+            'amount' => $this->totalAmount(),
+            'discount' => $this->totalDiscount(),
+            'tax' => $this->totalTax(),
+            'grand' => $this->grandTotal(),
+        ];
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  QT Destination (subform QT_Destination, field ลงท้าย _D) */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * รายการค่าบริการปลายทาง — โครงสร้างเดียวกับ items() เพื่อใช้ partial ตารางร่วมกัน
+     *
+     * @return array<int, array{no:int, name:string, code:string, description:string, quantity:float, unit:string,
+     *   list_price:float, discount:float, tax:float, total:float, recurring_amount:null}>
+     */
+    public function destinationItems(): array
+    {
+        $rows = $this->quote[$this->f['destination_items'] ?? 'QT_Destination'] ?? [];
+        $items = [];
+
+        foreach (array_values(is_array($rows) ? $rows : []) as $i => $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $product = $row['Product_Name_D'] ?? [];
+            $name = is_array($product) ? ($product['name'] ?? '') : (string) $product;
+
+            $items[] = [
+                'no' => (int) ($row['LinkingModule1_Serial_Number'] ?? $i + 1),
+                'name' => (string) $name,
+                'code' => '',
+                'description' => (string) ($row['Description_D'] ?? ''),
+                'quantity' => (float) ($row['Quantity_D'] ?? 0),
+                'unit' => '',
+                'list_price' => (float) ($row['List_Price_D'] ?? 0),
+                'discount' => (float) ($row['Discount_D'] ?? 0),
+                'tax' => (float) ($row['Total_Tax_D'] ?? 0),
+                'total' => (float) ($row['Amount_D'] ?? $row['Total_D']
+                    ?? ((float) ($row['Quantity_D'] ?? 0) * (float) ($row['List_Price_D'] ?? 0))),
+                'recurring_amount' => null,
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * ชุดยอดสำหรับกล่องสรุปยอดของตาราง QT Destination (field *_D ของ Quote)
+     *
+     * @return array{amount: float, discount: float, tax: float, grand: float}
+     */
+    public function destinationTotals(): array
+    {
+        $amount = $this->firstNumber(['Total_Amount_D', 'Sub_Total_D'])
+            ?? round(array_sum(array_column($this->destinationItems(), 'total')), 2);
+        $discount = $this->firstNumber(['Total_Discount_D']) ?? 0.0;
+        $tax = $this->firstNumber(['Total_Tax_D']) ?? 0.0;
+
+        return [
+            'amount' => $amount,
+            'discount' => $discount,
+            'tax' => $tax,
+            'grand' => $this->firstNumber(['Grand_Total_D']) ?? round($amount - $discount + $tax, 2),
+        ];
+    }
+
+    /**
      * คืนค่าตัวเลขตัวแรกที่มีใน record ตามลำดับ key (null = ไม่มีเลย)
      */
     protected function firstNumber(array $keys): ?float

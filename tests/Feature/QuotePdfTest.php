@@ -256,6 +256,28 @@ class QuotePdfTest extends TestCase
         $this->get('/fa-sa-th/'.self::QUOTE_ID)->assertOk()->assertHeader('X-Quote-Form', 'FA-SA-TH');
     }
 
+    public function test_thde_form_renders_destination_page(): void
+    {
+        $quote = $this->sampleQuote();
+        $quote['QT_Destination'] = [
+            ['LinkingModule1_Serial_Number' => '1', 'Product_Name_D' => ['name' => 'ค่าเซ็นต์สัญญา'], 'Quantity_D' => 1, 'List_Price_D' => 300, 'Amount_D' => 300],
+        ];
+        $quote['Total_Amount_D'] = 300;
+        $quote['Grand_Total_D'] = 300;
+
+        Http::fake([
+            'accounts.zoho.com/*' => Http::response(['access_token' => 'tok'], 200),
+            'www.zohoapis.com/crm/v8/Quotes/'.self::QUOTE_ID => Http::response(['data' => [$quote]], 200),
+            'www.zohoapis.com/*' => Http::response('', 204),
+        ]);
+
+        $response = $this->get('/FA-SA-THDE/'.self::QUOTE_ID)->assertOk()->assertHeader('X-Quote-Form', 'FA-SA-THDE');
+        $pdf = file_get_contents($response->baseResponse->getFile()->getPathname());
+
+        // TH + Destination + เงื่อนไข/ลงนาม = อย่างน้อย 3 หน้า
+        $this->assertGreaterThanOrEqual(3, preg_match_all('/\/Type\s*\/Page[^s]/', $pdf));
+    }
+
     public function test_unknown_form_returns_404_without_calling_zoho(): void
     {
         Http::fake();

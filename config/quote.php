@@ -48,6 +48,15 @@ return [
             'label' => 'ใบเสนอราคา ภาษาไทย (FA-SA)',
             'view' => 'pdf.forms.fa-sa-th',
         ],
+        'FA-SA-THDE' => [
+            'label' => 'ใบเสนอราคา ภาษาไทย + หน้า QT Destination',
+            'view' => 'pdf.forms.fa-sa-thde',
+            'texts' => [
+                // แถบชื่อส่วนเหนือตาราง: หน้า 1 = QT Destination, หน้า 2 = QT Thailand
+                'destination_title' => env('QUOTE_DESTINATION_TITLE', 'รายการค่าบริการปลายทาง (QT Destination)'),
+                'thailand_title' => env('QUOTE_THAILAND_TITLE', 'รายการค่าบริการในประเทศ (QT Thailand)'),
+            ],
+        ],
         // 'FA-SA-CN' => ['label' => 'ใบเสนอราคา ภาษาจีน', 'view' => 'pdf.forms.fa-sa-cn'],
     ],
 

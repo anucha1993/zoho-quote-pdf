@@ -176,6 +176,11 @@ URL รูปแบบ `https://pdf.trackingmouthefirst.com/{ฟอร์ม}/{r
 | ฟอร์ม | ไฟล์ template | หมายเหตุ |
 |---|---|---|
 | `FA-SA-TH` | `resources/views/pdf/forms/fa-sa-th.blade.php` | ใบเสนอราคาภาษาไทย (ค่าเริ่มต้น) |
+| `FA-SA-THDE` | `resources/views/pdf/forms/fa-sa-thde.blade.php` | เหมือน FA-SA-TH + หน้า 2 ตาราง QT Destination (subform `QT_Destination`, ยอด `*_D`) |
+
+ทุกฟอร์มประกอบจาก partial ใน `resources/views/pdf/forms/partials/` (หัวกระดาษ, ข้อมูลลูกค้า, หัวข้อบริการ,
+ตารางรายการ+กล่องสรุปยอด, เงื่อนไข, ส่วนปิดท้าย, ท้ายกระดาษ) — แก้ partial ครั้งเดียวมีผลทุกฟอร์ม
+ตารางรายการ (`_items`) ใช้ซ้ำได้โดยส่ง `rows` และ `totals` ต่างชุด เช่น `$q->destinationItems()` / `$q->destinationTotals()`
 
 URL พิเศษ:
 - `/auto/{id}` ระบบเลือกฟอร์มเองจากฟิลด์ ISO ของ Quote ตาม `auto_form.map` ใน `config/quote.php`

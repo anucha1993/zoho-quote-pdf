@@ -47,6 +47,29 @@ class QuoteDataTest extends TestCase
         $this->assertSame('เงื่อนไขการชำระเงิน<br>ชื่อจริง', $q->paymentTerms());
     }
 
+    public function test_destination_items_and_totals_map_the_d_fields(): void
+    {
+        $q = new QuoteData([
+            'Total_Amount_D' => 400,
+            'Total_Discount_D' => null,
+            'Total_Tax_D' => 0,
+            'Grand_Total_D' => 400,
+            'QT_Destination' => [
+                ['LinkingModule1_Serial_Number' => '1', 'Product_Name_D' => ['name' => 'ค่าเซ็นต์สัญญา'], 'Quantity_D' => 1, 'List_Price_D' => 300, 'Amount_D' => 300, 'Total_D' => 300, 'Description_D' => 'x'],
+                ['LinkingModule1_Serial_Number' => '2', 'Product_Name_D' => ['name' => 'ค่าบัตร OWIC'], 'Quantity_D' => 1, 'List_Price_D' => 100, 'Amount_D' => 100, 'Total_D' => 100],
+            ],
+        ]);
+
+        $items = $q->destinationItems();
+        $this->assertCount(2, $items);
+        $this->assertSame([1, 2], array_column($items, 'no'));
+        $this->assertSame('ค่าเซ็นต์สัญญา', $items[0]['name']);
+        $this->assertSame(300.0, $items[0]['total']);
+        $this->assertSame(['amount' => 400.0, 'discount' => 0.0, 'tax' => 0.0, 'grand' => 400.0], $q->destinationTotals());
+
+        $this->assertSame([], (new QuoteData([]))->destinationItems());
+    }
+
     public function test_date_format_is_dd_mm_yyyy_gregorian(): void
     {
         $q = new QuoteData(['field2' => '2026-10-22', 'Quote_Stage' => 'อนุมัติ']);
