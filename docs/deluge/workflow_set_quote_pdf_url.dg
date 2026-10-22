@@ -1,0 +1,54 @@
+// =====================================================================
+//  Zoho CRM Deluge — Workflow function: setQuotePdfUrl
+//  Module  : Quotes
+//  Trigger : Workflow Rule "Quote created" (On Create) → Function
+//  Argument: quoteId  (map to  ${Quotes.Quote Id})
+//
+//  หน้าที่: สร้าง signature ให้ตรงกับฝั่ง Laravel (App\Support\QuoteLink)
+//           แล้วเขียน URL ลง field Quote_PDF_URL (ชนิด URL)
+//
+//  ก่อนใช้งาน:
+//    1. สร้าง field "Quote PDF URL" (API name: Quote_PDF_URL) ใน Quotes
+//    2. ตั้งค่า SECRET ให้ตรงกับ QUOTE_LINK_SECRET ใน .env ของ Laravel
+//       (แนะนำเก็บไว้ใน Organization Variable ชื่อ quote_link_secret
+//        แล้วอ่านด้วย zoho.crm.getOrgVariable("quote_link_secret"))
+//    3. ตั้ง BASE_URL ให้ตรงกับ QUOTE_BASE_URL
+//    4. เทียบ signature กับ  php artisan quotes:link <RecordID>  ให้ตรงกันก่อนเปิดใช้จริง
+// =====================================================================
+
+string setQuotePdfUrl(Int quoteId)
+{
+    // ---------- ค่าตั้งต้น ----------
+    secret = zoho.crm.getOrgVariable("quote_link_secret");   // หรือใส่ตรง ๆ: secret = "xxxxx";
+    baseUrl = "https://zoho.trackingmouthefirst.com";
+    sigLength = 64;   // ต้องตรงกับ QUOTE_SIGNATURE_LENGTH (64 = ไม่ตัด)
+
+    recordId = quoteId.toString();
+
+    // ---------- สร้าง HMAC-SHA256 ----------
+    // รูปแบบ: zoho.encryption.hmacsha256(<text>, <key>, <output_type>)
+    //   - text        = record ID (string)
+    //   - key         = secret
+    //   - output_type = "hex" (ค่าเริ่มต้น) หรือ "base64"
+    // ฝั่ง Laravel ใช้ hash_hmac('sha256', id, secret) → hex ตัวพิมพ์เล็ก
+    // *** ถ้า Deluge เวอร์ชันของ org ไม่รับ parameter ที่ 3 ให้ตัดออก (ค่าเริ่มต้นคือ hex) ***
+    signature = zoho.encryption.hmacsha256(recordId, secret, "hex");
+    signature = signature.toLowerCase();
+
+    if (sigLength < 64)
+    {
+        signature = signature.subString(0, sigLength);
+    }
+
+    // ---------- ประกอบ URL แบบเดียวกับระบบ Tracking ----------
+    pdfUrl = baseUrl + "/quote/" + recordId + "." + signature;
+
+    // ---------- เขียนกลับลง Quote ----------
+    updateMap = Map();
+    updateMap.put("Quote_PDF_URL", pdfUrl);
+
+    resp = zoho.crm.updateRecord("Quotes", quoteId, updateMap);
+    info resp;
+
+    return pdfUrl;
+}

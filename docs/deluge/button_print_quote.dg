@@ -1,0 +1,77 @@
+// =====================================================================
+//  Zoho CRM Deluge — Custom Button: "Print Quote"
+//  Module : Quotes  (Detail page button)
+//  Action : Writing Function  →  argument  quoteId = ${Quotes.Quote Id}
+//
+//  เปิด PDF ในแท็บใหม่ ถ้า field Quote_PDF_URL ยังว่าง (เช่น Quote เก่า
+//  ที่สร้างก่อนเปิด workflow) จะคำนวณ signature ให้ใหม่แล้วบันทึกลง field ด้วย
+//
+//  ทางเลือกที่ง่ายกว่า (ไม่ต้องเขียนโค้ด):
+//    Custom Button → Action "Open a URL" → ใส่  ${Quotes.Quote PDF URL}
+//    (ใช้ได้เมื่อมั่นใจว่า workflow เติม URL ให้ทุก Quote แล้ว)
+// =====================================================================
+
+string printQuote(Int quoteId)
+{
+    quote = zoho.crm.getRecordById("Quotes", quoteId);
+    pdfUrl = ifnull(quote.get("Quote_PDF_URL"), "");
+
+    if (pdfUrl == "")
+    {
+        // ---- สร้าง URL ใหม่ (ตรรกะเดียวกับ workflow function) ----
+        secret = zoho.crm.getOrgVariable("quote_link_secret");
+        baseUrl = "https://zoho.trackingmouthefirst.com";
+        sigLength = 64;
+
+        recordId = quoteId.toString();
+        signature = zoho.encryption.hmacsha256(recordId, secret, "hex").toLowerCase();
+
+        if (sigLength < 64)
+        {
+            signature = signature.subString(0, sigLength);
+        }
+
+        pdfUrl = baseUrl + "/quote/" + recordId + "." + signature;
+
+        updateMap = Map();
+        updateMap.put("Quote_PDF_URL", pdfUrl);
+        zoho.crm.updateRecord("Quotes", quoteId, updateMap);
+    }
+
+    // เปิด PDF ในแท็บใหม่
+    openUrl(pdfUrl, "new window");
+
+    return "";
+}
+
+
+// =====================================================================
+//  (ทางเลือก) Custom Button: "Attach PDF to Quote"
+//  เรียก endpoint POST /quote/{id}.{sig}/attach ให้ Laravel สร้าง PDF
+//  แล้วแนบกลับเข้า Quote เป็น Attachment โดยไม่เสียเครดิต Zoho Writer
+// =====================================================================
+
+string attachQuotePdf(Int quoteId)
+{
+    quote = zoho.crm.getRecordById("Quotes", quoteId);
+    pdfUrl = ifnull(quote.get("Quote_PDF_URL"), "");
+
+    if (pdfUrl == "")
+    {
+        return "ยังไม่มีลิงก์ PDF กรุณากด Print Quote ก่อน";
+    }
+
+    resp = invokeurl
+    [
+        url : pdfUrl + "/attach"
+        type : POST
+    ];
+    info resp;
+
+    if (resp.get("ok") == true)
+    {
+        return "แนบไฟล์ " + resp.get("filename") + " เรียบร้อย";
+    }
+
+    return "แนบไฟล์ไม่สำเร็จ: " + ifnull(resp.get("message"), resp.toString());
+}
