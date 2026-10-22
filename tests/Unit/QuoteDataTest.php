@@ -23,6 +23,30 @@ class QuoteDataTest extends TestCase
         $this->assertFalse((new QuoteData([]))->isApproved());
     }
 
+    public function test_merge_tokens_in_terms_are_replaced_with_field_values(): void
+    {
+        $q = new QuoteData([
+            'field1' => 'ชำระเต็มจำนวน ณ วันที่ตกลงดำเนินการ',
+            'Account_Name' => ['id' => '1', 'name' => 'บริษัท ทดสอบ จำกัด'],
+            'field7' => '<b>«Quotes.เงื่อนไขการชำระเงิน»</b><br>ลูกค้า: ${Quotes.Account Name} / «Quotes.ไม่มีฟิลด์นี้»',
+        ]);
+
+        $this->assertSame(
+            '<b>ชำระเต็มจำนวน ณ วันที่ตกลงดำเนินการ</b><br>ลูกค้า: บริษัท ทดสอบ จำกัด / ไม่มีฟิลด์นี้',
+            $q->paymentTerms()
+        );
+    }
+
+    public function test_merge_token_falls_back_to_label_when_field_is_empty(): void
+    {
+        $q = new QuoteData([
+            'field1' => '-None-',
+            'field7' => '«Quotes.เงื่อนไขการชำระเงิน»<br>«Quotes.ชื่อจริง»',
+        ]);
+
+        $this->assertSame('เงื่อนไขการชำระเงิน<br>ชื่อจริง', $q->paymentTerms());
+    }
+
     public function test_date_format_is_dd_mm_yyyy_gregorian(): void
     {
         $q = new QuoteData(['field2' => '2026-10-22', 'Quote_Stage' => 'อนุมัติ']);

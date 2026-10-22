@@ -213,6 +213,17 @@ class QuoteData
     }
 
     /**
+     * ${Quotes.ชื่อจริง} ${Quotes.นามสกุล} (ไม่มีชื่อเล่น) — ใช้ในกล่องลงนามผู้เสนอขาย
+     * ถ้าว่างใช้ชื่อ Owner
+     */
+    public function salesFullName(): string
+    {
+        $name = $this->joinParts([$this->custom('sales_first_name'), $this->custom('sales_last_name')]);
+
+        return $name !== '' ? $name : $this->ownerName();
+    }
+
+    /**
      * ${Quotes.ชื่อจริง} ${Quotes.นามสกุล} ${Lookup:รหัสพนักงาน.ชื่อเล่น}
      * ถ้า custom field ว่างทั้งหมด ใช้ชื่อ Owner
      */
@@ -347,7 +358,54 @@ class QuoteData
     /** ${Quotes.เงื่อนไข และรายละเอียการชำระเงิน} — ถ้าว่างใช้ Terms_and_Conditions */
     public function paymentTerms(): string
     {
-        return trim((string) ($this->custom('payment_terms') ?: $this->terms()));
+        return $this->mergeTokens(trim((string) ($this->custom('payment_terms') ?: $this->terms())));
+    }
+
+    /**
+     * แทน merge token ในข้อความ: «Quotes.ป้ายชื่อ» หรือ ${Quotes.ป้ายชื่อ} → ค่าจาก field (ตาม config zoho.fields.merge_labels)
+     * ถ้า field ไม่มีค่า หรือไม่รู้จัก token → แสดงป้ายชื่อแทน เช่น "เงื่อนไขการชำระเงิน" (ไม่โชว์โค้ด «» ในเอกสาร)
+     */
+    public function mergeTokens(string $text): string
+    {
+        if ($text === '' || ! preg_match('/«|\$\{/u', $text)) {
+            return $text;
+        }
+
+        $labels = (array) ($this->f['merge_labels'] ?? []);
+
+        return preg_replace_callback('/(?:«|\$\{)\s*Quotes\.\s*([^»}]+?)\s*(?:»|\})/u', function ($m) use ($labels) {
+            $label = trim($m[1]);
+            $api = $labels[$label] ?? null;
+
+            if ($api === null) {
+                // เทียบแบบไม่สนตัวพิมพ์/ช่องว่าง
+                foreach ($labels as $l => $a) {
+                    if (mb_strtolower(preg_replace('/\s+/u', '', $l)) === mb_strtolower(preg_replace('/\s+/u', '', $label))) {
+                        $api = $a;
+                        break;
+                    }
+                }
+            }
+
+            $value = $api ? ($this->quote[$api] ?? '') : '';
+
+            if (is_array($value)) {
+                $value = $value['name'] ?? '';
+            }
+
+            if ($api === ($this->f['custom']['quote_date'] ?? 'field2') && $value) {
+                $value = self::dateFormat($this->date((string) $value));
+            }
+
+            $value = trim((string) $value);
+
+            // picklist ที่ยังไม่เลือกจะเป็น "-None-" ให้ถือว่าว่าง
+            if ($value === '' || $value === '-None-') {
+                $value = $label;
+            }
+
+            return e($value);
+        }, $text) ?? $text;
     }
 
     public function description(): string

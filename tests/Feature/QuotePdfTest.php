@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Services\QuotePdfService;
 use App\Support\QuoteLink;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
@@ -150,6 +151,29 @@ class QuotePdfTest extends TestCase
         $secondPath = $second->baseResponse->getFile()->getPathname();
 
         $this->assertNotSame($firstPath, $secondPath);
+    }
+
+    public function test_truncated_rich_text_is_completed_via_fetch_full_data(): void
+    {
+        $quote = $this->sampleQuote();
+        $quote['field7'] = '<b>ตัดแล้ว</b>';
+        $quote['$has_more'] = ['field7' => true, 'field6' => false, 'Quoted_Items' => false];
+
+        Http::fake([
+            'accounts.zoho.com/*' => Http::response(['access_token' => 'tok'], 200),
+            'www.zohoapis.com/crm/v8/Quotes/'.self::QUOTE_ID.'/actions/fetch_full_data*' => Http::response([
+                'data' => [['id' => self::QUOTE_ID, 'field7' => '<b>ตัดแล้ว</b><ol><li>ข้อเต็ม 1</li><li>ข้อเต็ม 2</li></ol>']],
+            ], 200),
+            'www.zohoapis.com/crm/v8/Quotes/'.self::QUOTE_ID => Http::response(['data' => [$quote]], 200),
+            'www.zohoapis.com/*' => Http::response('', 204),
+        ]);
+
+        $data = app(QuotePdfService::class)->load(self::QUOTE_ID);
+
+        $this->assertStringContainsString('ข้อเต็ม 2', $data->paymentTerms());
+
+        Http::assertSent(fn ($req) => str_contains($req->url(), '/actions/fetch_full_data')
+            && str_contains($req->url(), 'fields=field7'));
     }
 
     public function test_zoho_outage_returns_502(): void

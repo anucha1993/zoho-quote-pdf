@@ -100,6 +100,30 @@ return [
         | ป้ายชื่อใน CRM เป็นภาษาไทย Zoho จะตั้ง API name ให้อัตโนมัติ
         | ต้องเปิดดูที่ Setup > Developer Space > APIs > API Names > Quotes แล้วแก้ที่ .env
         */
+        /*
+        | merge token ที่พนักงานพิมพ์ไว้ในข้อความ rich text เช่น «Quotes.เงื่อนไขการชำระเงิน» หรือ ${Quotes.Account Name}
+        | (เดิม Zoho Writer แทนค่าให้) → ระบบจะแทนด้วยค่าจาก field ตามป้ายชื่อนี้
+        | key = ป้ายชื่อ field ใน CRM, value = API name
+        */
+        'merge_labels' => [
+            'เงื่อนไขการชำระเงิน' => 'field1',
+            'Account Name' => 'Account_Name',
+            'Contact Name' => 'Contact_Name',
+            'Quote Number' => 'Quotation_Number',
+            'Quotation Number' => 'Quotation_Number',
+            'Subject' => 'Subject',
+            'ชื่อจริง' => 'First_Name',
+            'นามสกุล' => 'Last_Name',
+            'เบอร์โทรศัพท์' => 'Sales_Mobile',
+            'วันที่เสนอราคา' => 'field2',
+            'หัวข้อการให้บริการ' => 'field6',
+            'ISO' => 'ISO',
+            'งวดที่ 1' => 'Installment_1',
+            'งวดที่ 2' => 'Installment_2',
+            'งวดที่ 3' => 'Installment_3',
+            'รวมทุกงวด' => 'field4',
+        ],
+
         // ค่าเริ่มต้นคือ API name จริงของ org 853559971 (ตรวจจาก settings/fields เมื่อ 2026-10-22)
         'custom' => [
             // ${Quotes.วันที่เสนอราคา}  (ถ้าว่างจะใช้ Created_Time)

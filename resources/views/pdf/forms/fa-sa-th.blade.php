@@ -72,7 +72,7 @@
     .frame { border: 0.5pt solid #000; padding: 0; }
 
     /* ส่วนปิดท้าย (ข้อความ + กล่องลงนาม) ตรึงไว้ล่างสุดของกรอบ */
-    .closing-pinned { position: absolute; left: {{ $doc['margin_left_mm'] ?? 6 }}mm; bottom: {{ ($doc['margin_bottom_mm'] ?? 32) + 3 }}mm; width: {{ 210 - ($doc['margin_left_mm'] ?? 6) - ($doc['margin_right_mm'] ?? 4) }}mm; }
+    .closing-pinned { position: absolute; left: {{ $doc['margin_left_mm'] ?? 6 }}mm; bottom: {{ ($doc['margin_bottom_mm'] ?? 30) + 1 }}mm; width: {{ 210 - ($doc['margin_left_mm'] ?? 6) - ($doc['margin_right_mm'] ?? 4) }}mm; }
 
     .sig-box { border: 0.5pt solid #000; height: 70pt; text-align: center; vertical-align: middle; }
     .sig-line { text-decoration: underline; }
@@ -83,24 +83,34 @@
 
 @php
     // ความสูงกรอบ = กระดาษ A4 − ขอบบน − พื้นที่ footer − ช่องว่างเล็กน้อย (หน่วย mm)
-    $frameHeight = 297 - ($doc['margin_top_mm'] ?? 4.5) - ($doc['margin_bottom_mm'] ?? 32) - 1.5;
+    $frameHeight = 297 - ($doc['margin_top_mm'] ?? 4.5) - ($doc['margin_bottom_mm'] ?? 30) - 1.5;
     // ตรึงส่วนปิดท้ายไว้ล่างสุดเมื่อประเมินแล้วเนื้อหาไม่ล้นไปทับ (ประมาณความสูงเป็น pt)
     //   แถวรายการ ≈ 26pt (+13pt ถ้ามีรายละเอียด), เงื่อนไข ≈ 15pt ต่อบรรทัด (ประมาณจากความยาวข้อความและจำนวน tag ขึ้นบรรทัด)
     $termsHtml = RichText::block($q->paymentTerms());
     $termsPlain = RichText::plain($q->paymentTerms());
-    $termsLines = (int) ceil(mb_strlen($termsPlain) / 110) + preg_match_all('/<(br|li|p|div)\b/i', $termsHtml);
+    //   ประมาณบรรทัดของเงื่อนไข: แยกเป็นส่วนตาม <br>/<li>/</p> แล้วนับบรรทัดต่อส่วน (ตัดบรรทัดทุก ~125 ตัวอักษร)
+    $termsLines = 0;
+    foreach (preg_split('/<br\s*\/?>|<li>|<\/p>|<\/div>/i', $termsHtml) ?: [] as $segment) {
+        $len = mb_strlen(trim(strip_tags($segment)));
+        if ($len > 0) {
+            $termsLines += max(1, (int) ceil($len / 125));
+        }
+    }
+    $termsHeight = $termsLines * 14.6;
     $itemsHeight = max(count($items), $minRows) * 26 + count(array_filter($items, fn ($i) => $i['description'] !== '')) * 13;
-    $pinBottom = ($itemsHeight + $termsLines * 15) <= 330;
+    // งบความสูง (pt) ระหว่างแถวแรกของตารางถึงขอบบนของส่วนปิดท้ายที่ตรึงไว้ — วัดจากเอกสารจริง (A4, margin ปัจจุบัน)
+    $pinBottom = ($itemsHeight + $termsHeight) <= 305;
 @endphp
 <div class="frame" @if($pinBottom) style="height: {{ $frameHeight }}mm;" @endif>
 
     {{-- ============ แถว 1-2 : หัวกระดาษ (Picture 4 ที่ A1:K2) ============ --}}
-    <table>
+    {{-- เว้นระยะรอบหัวกระดาษ: ขอบบน 6pt, ซ้าย 2%, ล่าง 8pt ก่อนตารางลูกค้า --}}
+    <table style="margin-top: 6pt; margin-bottom: 8pt;">
         <tr>
-            <td class="nopad" style="width: 1%; height: 72pt;"></td>
-            <td class="nopad l" style="width: 99%; height: 72pt; vertical-align: middle;">
+            <td class="nopad" style="width: 2%; height: 72pt;"></td>
+            <td class="nopad l" style="width: 98%; height: 72pt; vertical-align: middle;">
                 @if($hasHeader)
-                    <img src="{{ $headerImg }}" style="width: 177mm;">
+                    <img src="{{ $headerImg }}" style="width: 175mm;">
                 @else
                     <div class="b f24">{{ $company['name_th'] }}</div>
                     <div class="f16">{{ $company['name_en'] }} &nbsp; เลขประจำตัวผู้เสียภาษี {{ $company['tax_id'] }}</div>
@@ -111,7 +121,7 @@
 
     {{-- ============ แถว 3-6 : ข้อมูลลูกค้า / เลขที่ / วันที่ / ผู้เสนอ ============ --}}
     <table>
-        <tr style="height: 24.4pt;">
+        <tr style="height: 24.4pt; margin-top: 4pt;">
             <td class="nopad" style="width: {{ $wA }}%;"></td>
             <td class="bd b l" style="width: {{ $wB }}%;">เรียน</td>
             <td class="bd b l" style="width: {{ $wCH }}%;">{{ $q->customerName() }}</td>
@@ -230,11 +240,11 @@
 <div class="closing-pinned">
 @endif
 
-    {{-- ============ แถว 17-20 : ข้อความปิดท้าย (กึ่งกลาง) ============ --}}
-    <table>
+    {{-- ============ แถว 17-20 : ข้อความปิดท้าย (กึ่งกลาง ตัวหนา เว้นระยะจากเงื่อนไขด้านบน) ============ --}}
+    <table style="margin-top: 10pt;">
         @foreach($texts['closing'] as $line)
             <tr style="height: 21pt;">
-                <td class="c f18">{{ $line }}</td>
+                <td class="c b f18">{{ $line }}</td>
             </tr>
         @endforeach
     </table>
@@ -259,13 +269,15 @@
             <td class="nopad" style="width: 3.6%;"></td>
             <td class="sig-box f16" style="width: 26.2%;">
                 <div>(<span class="sig-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>)</div>
-                <div class="b">(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</div>
+                {{-- ( ${Quotes.Account Name} ) --}}
+                <div class="b">( {{ $q->customerName() ?: '&nbsp;' }} )</div>
                 <div class="b">{{ $texts['sign_customer'] }}</div>
             </td>
             <td class="nopad" style="width: 2.9%;"></td>
             <td class="sig-box f16" style="width: 32.5%;">
                 <div>(<span class="sig-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>)</div>
-                <div class="b">(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</div>
+                {{-- ( ${Quotes.ชื่อจริง} ${Quotes.นามสกุล} ) --}}
+                <div class="b">( {{ $q->salesFullName() ?: '&nbsp;' }} )</div>
                 <div class="b">{{ $texts['sign_sales'] }}</div>
             </td>
             <td class="nopad" style="width: 3.8%;"></td>

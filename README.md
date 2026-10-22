@@ -124,6 +124,14 @@ COMPANY_PHONE="02-..."
 | `${QT Thailand.*}` (subform) | `ZOHO_ITEMS_SUBFORM` | `Quoted_Items` (S.NO = `Sequence_Number`, Amount = `Total`) | QT_Thailand |
 | `${Contacts.Mobile}` | (ดึงจาก Contact อัตโนมัติ) | `Mobile` | Phone |
 
+**Rich text จาก CRM** (หัวข้อการให้บริการ, เงื่อนไข) ถูกกรองด้วย `app/Support/RichText.php`
+ให้เหลือเฉพาะตัวหนา/เอียง/ขีดเส้นใต้/รายการ และตัด style ของ Zoho ทิ้ง
+Zoho ตัด rich text ใน Get Record ไว้ ~500 ตัวอักษร (`$has_more`) ระบบจึงดึงเนื้อหาเต็มผ่าน
+Rich Text Fields API (`/actions/fetch_full_data`) ให้อัตโนมัติ
+
+**Merge token ในข้อความ** เช่น `«Quotes.เงื่อนไขการชำระเงิน»` หรือ `${Quotes.Account Name}` ที่พนักงานพิมพ์ไว้
+จะถูกแทนด้วยค่าจาก field ตามตาราง `merge_labels` ใน `config/zoho.php` (token ที่ไม่รู้จักจะถูกลบ)
+
 **ยอดรวมทั้งหมด** คำนวณจากผลรวมช่อง Amount ของทุกรายการ (= `Sub_Total` ก่อน VAT) ตามสูตร `=SUM()` ในต้นแบบ
 ไม่ใช้ `Grand_Total` ของ Zoho ซึ่งรวม VAT แล้ว
 

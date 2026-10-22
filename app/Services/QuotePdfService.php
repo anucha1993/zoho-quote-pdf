@@ -182,7 +182,7 @@ class QuotePdfService
             'margin_left' => (float) ($doc['margin_left_mm'] ?? 6),
             'margin_right' => (float) ($doc['margin_right_mm'] ?? 4),
             'margin_top' => (float) ($doc['margin_top_mm'] ?? 4.5),
-            'margin_bottom' => (float) ($doc['margin_bottom_mm'] ?? 32),
+            'margin_bottom' => (float) ($doc['margin_bottom_mm'] ?? 30),
             'margin_header' => 0,
             'margin_footer' => (float) ($doc['margin_footer_mm'] ?? 3),
             'tempDir' => storage_path('app/mpdf'),

@@ -108,7 +108,69 @@ class ZohoCrmService
             throw new QuoteNotFoundException("Quote {$id} not found");
         }
 
+        return $this->fillTruncatedRichText('Quotes', $record);
+    }
+
+    /**
+     * Zoho ตัด rich text field ให้เหลือ ~500 ตัวอักษรใน Get Record และส่ง $has_more.{field} = true
+     * → ดึงเนื้อหาเต็มผ่าน Rich Text Fields API (/actions/fetch_full_data) แล้วแทนค่าลงใน record
+     *
+     * @param  array<string, mixed>  $record
+     * @return array<string, mixed>
+     */
+    public function fillTruncatedRichText(string $module, array $record): array
+    {
+        $hasMore = $record['$has_more'] ?? [];
+
+        if (! is_array($hasMore) || empty($record['id'])) {
+            return $record;
+        }
+
+        // เฉพาะ field ที่ถูกตัดและเป็นข้อความ (subform/lookup ก็มี flag นี้ แต่ไม่เกี่ยว)
+        $truncated = array_keys(array_filter(
+            $hasMore,
+            fn ($flag, $field) => $flag === true && is_string($record[$field] ?? null),
+            ARRAY_FILTER_USE_BOTH
+        ));
+
+        if ($truncated === []) {
+            return $record;
+        }
+
+        $full = $this->tryGet(fn () => $this->getRichTextFields($module, (string) $record['id'], $truncated)) ?? [];
+
+        foreach ($truncated as $field) {
+            if (isset($full[$field]) && is_string($full[$field])) {
+                $record[$field] = $full[$field];
+            }
+        }
+
         return $record;
+    }
+
+    /**
+     * Rich Text Fields API: GET /{module}/{id}/actions/fetch_full_data?fields=a,b
+     *
+     * @param  string[]  $fields
+     * @return array<string, mixed>|null
+     */
+    public function getRichTextFields(string $module, string $id, array $fields): ?array
+    {
+        $response = $this->request(
+            'get',
+            "/crm/{$this->version()}/{$module}/{$id}/actions/fetch_full_data",
+            $fields !== [] ? ['fields' => implode(',', $fields)] : []
+        );
+
+        if (in_array($response->status(), [204, 404], true)) {
+            return null;
+        }
+
+        $this->assertSuccessful($response, "GET {$module}/{$id}/actions/fetch_full_data");
+
+        $data = $response->json('data.0');
+
+        return is_array($data) ? $data : null;
     }
 
     /**
