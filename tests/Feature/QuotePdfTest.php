@@ -117,6 +117,23 @@ class QuotePdfTest extends TestCase
         $this->assertSame('%PDF-CACHED', file_get_contents($second->baseResponse->getFile()->getPathname()));
     }
 
+    public function test_refresh_param_with_secret_forces_rerender(): void
+    {
+        $this->fakeZoho();
+
+        $first = $this->get($this->url())->assertOk();
+        $path = $first->baseResponse->getFile()->getPathname();
+        file_put_contents($path, '%PDF-CACHED');
+
+        // refresh ผิด → ยังได้ไฟล์ cache เดิม
+        $this->get($this->url().'?refresh=wrong')->assertOk();
+        $this->assertSame('%PDF-CACHED', file_get_contents($path));
+
+        // refresh ถูก → สร้างใหม่
+        $this->get($this->url().'?refresh=test-secret')->assertOk()->assertHeader('X-Quote-Cache', 'miss');
+        $this->assertStringStartsWith('%PDF-1', file_get_contents($path));
+    }
+
     public function test_modified_quote_invalidates_cache(): void
     {
         // request แรกได้ Quote เวอร์ชันเดิม, request ที่สองได้เวอร์ชันที่ Modified_Time เปลี่ยน

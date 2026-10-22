@@ -90,12 +90,16 @@
             open.href = opt.getAttribute('data-view');
             dl.href = opt.getAttribute('data-download');
             loading.style.display = '';
-            // #toolbar=1 ให้ viewer ของเบราว์เซอร์แสดงปุ่มพิมพ์/บันทึก
-            frame.src = opt.getAttribute('data-view') + '#toolbar=1&view=FitH';
+            // โหลด PDF ของฟอร์มที่เลือกใหม่ทันที: ใส่ค่าเวลาใน query กัน browser ใช้ไฟล์เดิมใน cache
+            // (#toolbar=1 ให้ viewer ของเบราว์เซอร์แสดงปุ่มพิมพ์/บันทึก)
+            var url = opt.getAttribute('data-view') + '?v=' + Date.now() + '#toolbar=1&view=FitH';
+            frame.removeAttribute('src');
+            setTimeout(function () { frame.src = url; }, 0);
         }
 
         frame.addEventListener('load', function () { loading.style.display = 'none'; });
         sel.addEventListener('change', apply);
+        sel.addEventListener('input', apply);
         apply();
     })();
 </script>

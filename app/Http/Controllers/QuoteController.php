@@ -46,6 +46,14 @@ class QuoteController extends Controller
         try {
             $quote = $this->pdf->load($id);
             $quoteForm = $this->resolveForm($formSlug, $quote);
+
+            // ?refresh=<QUOTE_LINK_SECRET> → ทิ้ง PDF ที่ cache ไว้แล้วสร้างใหม่ (ใช้ตอนแก้ปัญหาบนเซิร์ฟเวอร์)
+            $refresh = (string) $request->query('refresh', '');
+            $secret = (string) config('quote.link_secret');
+            if ($refresh !== '' && $secret !== '' && hash_equals($secret, $refresh)) {
+                $this->pdf->forget($quote, $quoteForm);
+            }
+
             $path = $this->pdf->getPdfPath($quote, $quoteForm);
         } catch (QuoteNotFoundException) {
             abort(404);

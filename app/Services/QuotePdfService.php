@@ -79,6 +79,25 @@ class QuotePdfService
     }
 
     /**
+     * ลบไฟล์ PDF ที่ cache ไว้ของ Quote/ฟอร์มนี้ (ทุกเวอร์ชัน) เพื่อบังคับสร้างใหม่ใน request ถัดไป
+     */
+    public function forget(QuoteData $quote, ?QuoteForm $form = null): int
+    {
+        $form ??= QuoteForm::default();
+        $dir = storage_path('app/'.trim(config('quote.storage_dir', 'quotes'), '/'));
+        $slug = strtolower(preg_replace('/[^A-Za-z0-9_-]/', '', $form->slug));
+        $deleted = 0;
+
+        foreach (glob($dir.DIRECTORY_SEPARATOR.$quote->id().'_'.$slug.'_*.pdf') ?: [] as $file) {
+            if (@unlink($file)) {
+                $deleted++;
+            }
+        }
+
+        return $deleted;
+    }
+
+    /**
      * อ่านเนื้อหา PDF (ใช้ cache ถ้ามี)
      */
     public function getPdfBinary(QuoteData $quote, ?QuoteForm $form = null): string
@@ -253,8 +272,9 @@ class QuotePdfService
     {
         $form ??= QuoteForm::default();
 
-        // รวม File_Id ของลายเซ็นพนักงานขายด้วย → เปลี่ยนรูปใน Staffs แล้ว PDF ถูกสร้างใหม่
-        $sig = $quote->salesSignatureFileId() ?? '-';
+        // รวมสถานะลายเซ็นพนักงานขายด้วย: ใช้ File_Id เฉพาะเมื่อมีไฟล์รูปจริง (ดาวน์โหลดได้แล้ว)
+        // → เปลี่ยนรูปใน Staffs หรือดาวน์โหลดสำเร็จครั้งแรก PDF จะถูกสร้างใหม่ ไม่ค้าง PDF ที่ไม่มีลายเซ็น
+        $sig = $this->salesSignaturePath($quote) ? ($quote->salesSignatureFileId() ?? '-') : 'nosig';
 
         return "quote:{$quote->id()}:{$quote->modifiedTime()}:{$form->slug}:{$sig}:".$this->templateVersion($form);
     }
