@@ -112,6 +112,8 @@ return [
         'margin_left_mm' => 6,
         'margin_right_mm' => 4,
         'margin_top_mm' => 4.5,
+        // ความสูงพื้นที่หัวกระดาษ (ภาพโลโก้/ที่อยู่) ที่ซ้ำทุกหน้า — margin บนของเนื้อหา = margin_top_mm + ค่านี้
+        'header_height_mm' => 30,
         // ขอบล่างเผื่อพื้นที่ท้ายกระดาษ (รูป ISO/LINE/QR + รหัสฟอร์ม) ซึ่งตรึงไว้ล่างสุดของทุกหน้า
         'margin_bottom_mm' => 30,
         'margin_footer_mm' => 3,

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
 use Mpdf\Config\ConfigVariables;
 use Mpdf\Config\FontVariables;
+use Mpdf\HTMLParserMode;
 use Mpdf\Mpdf;
 use Mpdf\Output\Destination;
 
@@ -106,10 +107,35 @@ class QuotePdfService
 
         $doc = array_merge(config('quote.document'), $form->option('document', []));
 
-        // template แบ่ง 2 ส่วนด้วย marker: เนื้อหา | ส่วนปิดท้าย (ข้อความ + กล่องลงนาม) ที่ต้องตรึงล่างสุด
+        // template แบ่งส่วนด้วย marker:
+        //   <!--HEADER-->…<!--/HEADER-->  หัวกระดาษ → ตั้งเป็น page header ซ้ำทุกหน้า (SetHTMLHeader เชื่อถือได้กว่า tag ใน HTML)
+        //   <!--CLOSING-->                เนื้อหา | ส่วนปิดท้าย (ข้อความ + กล่องลงนาม) ที่ต้องตรึงล่างสุด
+        if (preg_match('/<!--HEADER-->(.*?)<!--\/HEADER-->/s', $html, $m)) {
+            $html = str_replace($m[0], '', $html);
+            // header render แยกจาก <style> ของเอกสาร → template ต้องใช้ inline style (ห้ามใส่ <style> ที่นี่ จะทำให้ header หาย)
+            $mpdf->SetHTMLHeader(trim($m[1]), 'O', true);
+        }
+
+        //   <!--FOOTER-->…<!--/FOOTER-->  ท้ายกระดาษ (รูป ISO/QR + เลขหน้า + รหัสฟอร์ม) → page footer ทุกหน้าตั้งแต่หน้าแรก
+        if (preg_match('/<!--FOOTER-->(.*?)<!--\/FOOTER-->/s', $html, $f)) {
+            $html = str_replace($f[0], '', $html);
+            $mpdf->SetHTMLFooter(trim($f[1]), 'O');
+        }
+
         [$body, $closing] = array_pad(explode('<!--CLOSING-->', $html, 2), 2, null);
 
-        $mpdf->WriteHTML($body);
+        // mPDF จะล้าง page header ที่ตั้งไว้ถ้าเขียนเอกสารเต็ม (<html><head>…) ทีเดียว
+        // จึงเขียน CSS กับเนื้อหาแยกเป็น fragment แทน (HTMLParserMode::HEADER_CSS แล้วค่อย body)
+        $css = preg_match('/<style>(.*?)<\/style>/s', $body, $s) ? $s[1] : '';
+        // กฎ @page ใน CSS ทำให้ mPDF ล้าง page header ที่ตั้งไว้ → ตัดทิ้ง (ขนาด/ขอบกระดาษตั้งผ่าน config อยู่แล้ว)
+        $css = preg_replace('/^\s*@page\b[^{]*\{[^}]*\}/m', '', $css) ?? $css;
+        $inner = preg_match('/<body[^>]*>(.*)$/s', $body, $b) ? $b[1] : $body;
+
+        if ($css !== '') {
+            $mpdf->WriteHTML($css, HTMLParserMode::HEADER_CSS);
+        }
+
+        $mpdf->WriteHTML($inner);
 
         if ($closing !== null && trim($closing) !== '') {
             // วัดพื้นที่ที่เหลือจริงบนหน้าปัจจุบัน (mm) ถ้าไม่พอสำหรับส่วนปิดท้าย → ขึ้นหน้าใหม่ก่อน
@@ -139,9 +165,9 @@ class QuotePdfService
     {
         $lastPage = $mpdf->page;
         $x = $mpdf->lMargin;
-        $y = $mpdf->tMargin;
+        $y = $mpdf->margin_header;   // กรอบเริ่มเหนือหัวกระดาษ (ครอบโลโก้ด้วยเหมือนต้นแบบ)
         $w = $mpdf->w - $mpdf->lMargin - $mpdf->rMargin;
-        $h = $mpdf->h - $mpdf->tMargin - $mpdf->bMargin - 1.5;
+        $h = $mpdf->h - $y - $mpdf->bMargin - 1.5;
 
         $mpdf->SetDrawColor(0);
         $mpdf->SetLineWidth(0.18); // ≈ 0.5pt
@@ -226,9 +252,10 @@ class QuotePdfService
             'orientation' => 'P',
             'margin_left' => (float) ($doc['margin_left_mm'] ?? 6),
             'margin_right' => (float) ($doc['margin_right_mm'] ?? 4),
-            'margin_top' => (float) ($doc['margin_top_mm'] ?? 4.5),
+            // หัวกระดาษซ้ำทุกหน้า (htmlpageheader) อยู่ในพื้นที่ margin_top: เริ่มที่ margin_header และกินสูง header_height_mm
+            'margin_top' => (float) ($doc['margin_top_mm'] ?? 4.5) + (float) ($doc['header_height_mm'] ?? 31),
             'margin_bottom' => (float) ($doc['margin_bottom_mm'] ?? 30),
-            'margin_header' => 0,
+            'margin_header' => (float) ($doc['margin_top_mm'] ?? 4.5),
             'margin_footer' => (float) ($doc['margin_footer_mm'] ?? 3),
             'tempDir' => storage_path('app/mpdf'),
 

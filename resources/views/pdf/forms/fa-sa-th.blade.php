@@ -27,7 +27,7 @@
 <meta charset="utf-8">
 <title>{{ $q->number() }}</title>
 <style>
-    @page { sheet-size: A4; }
+    /* ห้ามใส่กฎ at-page ที่นี่: mPDF จะล้าง page header (หัวกระดาษซ้ำทุกหน้า) เมื่อเจอ — ขนาดกระดาษตั้งใน QuotePdfService แล้ว */
     body {
         font-family: '{{ $doc['font'] }}', sans-serif;
         font-size: 13pt;          /* Angsana New 18pt × 0.65 × 1.12 (ขยายจากต้นแบบเล็กน้อยให้อ่านง่าย) */
@@ -89,23 +89,27 @@
     ส่วนปิดท้าย (หลัง marker CLOSING) ถูก QuotePdfService วางตรึงไว้ล่างสุดของหน้าสุดท้าย
     โดยวัดพื้นที่ที่เหลือจริง ถ้าไม่พอจะขึ้นหน้าใหม่ให้ก่อน และกรอบนอกถูกวาดให้ทุกหน้า
 --}}
-<div class="content">
-
-    {{-- ============ แถว 1-2 : หัวกระดาษ (Picture 4 ที่ A1:K2) ============ --}}
-    {{-- เว้นระยะรอบหัวกระดาษ: ขอบบน 6pt, ซ้าย 2%, ล่าง 8pt ก่อนตารางลูกค้า --}}
-    <table style="margin-top: 6pt; margin-bottom: 8pt;">
+{{-- ============ แถว 1-2 : หัวกระดาษ (Picture 4 ที่ A1:K2) — ซ้ำทุกหน้าด้วย htmlpageheader
+     (พื้นที่จองโดย margin_top = margin_top_mm + header_height_mm ใน QuotePdfService) ============ --}}
+<!--HEADER-->
+    {{-- เว้นระยะรอบหัวกระดาษ: ขอบบน 6pt, ซ้าย 2% --}}
+    {{-- ใช้ inline style ล้วน เพราะ page header ถูก render แยกจาก <style> ของเอกสาร --}}
+    <table style="margin-top: 6pt; width: 100%; border-collapse: collapse;">
         <tr>
-            <td class="nopad" style="width: 2%; height: 72pt;"></td>
-            <td class="nopad l" style="width: 98%; height: 72pt; vertical-align: middle;">
+            <td style="width: 2%; height: 72pt; padding: 0;"></td>
+            <td style="width: 98%; height: 72pt; padding: 0; text-align: left; vertical-align: middle;">
                 @if($hasHeader)
                     <img src="{{ $headerImg }}" style="width: 175mm;">
                 @else
-                    <div class="b f24">{{ $company['name_th'] }}</div>
-                    <div class="f16">{{ $company['name_en'] }} &nbsp; เลขประจำตัวผู้เสียภาษี {{ $company['tax_id'] }}</div>
+                    <div style="font-weight: bold; font-size: 17.5pt;">{{ $company['name_th'] }}</div>
+                    <div style="font-size: 11.5pt;">{{ $company['name_en'] }} &nbsp; เลขประจำตัวผู้เสียภาษี {{ $company['tax_id'] }}</div>
                 @endif
             </td>
         </tr>
     </table>
+<!--/HEADER-->
+
+<div class="content">
 
     {{-- ============ แถว 3-6 : ข้อมูลลูกค้า / เลขที่ / วันที่ / ผู้เสนอ ============ --}}
     <table>
@@ -181,7 +185,7 @@
                 <td class="bd c f22">{{ $item['no'] }}</td>
                 <td class="bd l f22">
                     {{ $item['name'] }}
-                    @if($item['description'])<br><span class="f16">{!! RichText::inline($item['description']) !!}</span>@endif
+                   
                     @if($item['recurring_amount'] !== null && $item['recurring_amount'] > 0)
                         <br><span class="f16">ราคาค่าใช้งานปีถัดไป (Recurring Amount {{ F::money($item['recurring_amount']) }})</span>
                     @endif
@@ -289,10 +293,11 @@
 
 {{-- ============ แถว 25-28 : ท้ายกระดาษ (รูปภาพ 3) + รหัสแบบฟอร์ม ${Quotes.ISO}
      ตรึงไว้ล่างสุดของทุกหน้าด้วย htmlpagefooter (พื้นที่จองโดย margin_bottom ใน QuotePdfService) ============ --}}
-<htmlpagefooter name="formFooter">
-    <table>
+{{-- ส่วนนี้ QuotePdfService ดึงไปตั้งเป็น page footer ด้วย SetHTMLFooter ตั้งแต่หน้าแรก (ใช้ inline style ล้วน เหมือนหัวกระดาษ) --}}
+<!--FOOTER-->
+    <table style="width: 100%; border-collapse: collapse;">
         <tr>
-            <td class="nopad c">
+            <td style="padding: 0; text-align: center;">
                 @if($hasFooter)
                     <img src="{{ $footerImg }}" style="width: 194mm;">
                 @endif
@@ -301,15 +306,15 @@
     </table>
     {{-- รหัสฟอร์มจัดกึ่งกลางใต้ QR code ของภาพท้ายกระดาษ
          (QR อยู่ที่ 83.7%–92.4% ของความกว้างภาพ 194mm ซึ่งวางกึ่งกลางพื้นที่ 200mm → ศูนย์กลาง QR ≈ 173.8mm) --}}
-    <table>
+    <table style="width: 100%; border-collapse: collapse;">
         <tr>
-            <td class="nopad" style="width: 78.4%;"></td>
-            <td class="c f18 nopad nowrap" style="width: 17%; padding-top: 1pt;">{{ $q->isoCode() }}</td>
-            <td class="nopad" style="width: 4.6%;"></td>
+            {{-- เลขหน้า เช่น "หน้า 1/2" ที่มุมซ้ายล่าง --}}
+            <td style="width: 78.4%; padding: 1pt 0 0 2mm; text-align: left; font-size: 11.5pt; color: #444; white-space: nowrap;">หน้า {PAGENO}/{nbpg}</td>
+            <td style="width: 17%; padding: 1pt 0 0 0; text-align: center; font-size: 13pt; white-space: nowrap;">{{ $q->isoCode() }}</td>
+            <td style="width: 4.6%; padding: 0;"></td>
         </tr>
     </table>
-</htmlpagefooter>
-<sethtmlpagefooter name="formFooter" value="on" />
+<!--/FOOTER-->
 
 @if($trackingUrl)
     <div style="position: absolute; right: 6mm; bottom: 4mm;">
