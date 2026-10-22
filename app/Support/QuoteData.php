@@ -331,18 +331,47 @@ class QuoteData
     }
 
     /**
-     * ยอดรวมทั้งหมด — ต้นแบบคือ =SUM(ช่อง Amount) จึงรวมจากรายการ (= Sub_Total ก่อนภาษี)
-     * ไม่ใช้ Grand_Total ของ Zoho ซึ่งรวม VAT แล้ว
+     * กล่องสรุปยอดท้ายตาราง (ตาม merge field «Quotes.QT …» ของฟอร์ม)
+     * อ่าน field QT_* ก่อน ถ้าไม่มีถอยไปใช้ field มาตรฐานของ Zoho
+     */
+    public function totalAmount(): float
+    {
+        return $this->firstNumber(['QT_Total_Amount', 'Total_Amount', $this->f['sub_total']])
+            ?? round(array_sum(array_column($this->items(), 'total')), 2);
+    }
+
+    public function totalDiscount(): float
+    {
+        return $this->firstNumber(['QT_Total_Discount', 'Total_Discount', $this->f['discount']]) ?? 0.0;
+    }
+
+    public function totalTax(): float
+    {
+        return $this->firstNumber(['QT_Total_Tax', 'Total_Tax', $this->f['tax']]) ?? 0.0;
+    }
+
+    /**
+     * จำนวนเงินรวมทั้งสิ้น (รวม VAT) = «Quotes.QT Grand Total» — ใช้ทำ BahtText ด้วย
      */
     public function grandTotal(): float
     {
-        $items = $this->items();
+        return $this->firstNumber(['QT_Grand_Total', $this->f['grand_total']])
+            ?? round($this->totalAmount() - $this->totalDiscount() + $this->totalTax(), 2);
+    }
 
-        if ($items !== []) {
-            return round(array_sum(array_column($items, 'total')), 2);
+    /**
+     * คืนค่าตัวเลขตัวแรกที่มีใน record ตามลำดับ key (null = ไม่มีเลย)
+     */
+    protected function firstNumber(array $keys): ?float
+    {
+        foreach ($keys as $key) {
+            $value = $this->quote[$key] ?? null;
+            if ($value !== null && $value !== '' && is_numeric($value)) {
+                return (float) $value;
+            }
         }
 
-        return $this->subTotal() ?: (float) ($this->quote[$this->f['grand_total']] ?? 0);
+        return null;
     }
 
     public function grandTotalText(): string

@@ -67,18 +67,32 @@ class QuoteDataTest extends TestCase
         $this->assertSame('IO2026-021617.pdf', $q->filename());
     }
 
-    public function test_grand_total_is_sum_of_item_amounts_before_vat(): void
+    public function test_totals_box_uses_qt_fields_with_fallbacks(): void
     {
         $q = new QuoteData([
-            'Grand_Total' => 20544,
-            'Sub_Total' => 19200,
+            'QT_Total_Amount' => 19200,
+            'QT_Total_Discount' => 0,
+            'QT_Total_Tax' => 1344,
+            'QT_Grand_Total' => 20544,
+            'Grand_Total' => 99999,
             'Quoted_Items' => [
                 ['Sequence_Number' => '1', 'Product_Name' => ['name' => 'A'], 'Quantity' => 3, 'List_Price' => 1900, 'Total' => 5700, 'Net_Total' => 5700],
                 ['Sequence_Number' => '2', 'Product_Name' => ['name' => 'B'], 'Quantity' => 3, 'List_Price' => 4500, 'Total' => 13500, 'Net_Total' => 13500],
             ],
         ]);
 
-        $this->assertSame(19200.0, $q->grandTotal());
+        $this->assertSame(19200.0, $q->totalAmount());
+        $this->assertSame(1344.0, $q->totalTax());
+        $this->assertSame(20544.0, $q->grandTotal());
         $this->assertSame([1, 2], array_column($q->items(), 'no'));
+
+        // ไม่มี field QT_* → ถอยไปใช้ field มาตรฐาน / คำนวณจากรายการ
+        $fallback = new QuoteData([
+            'Sub_Total' => 100, 'Discount' => 10, 'Tax' => 6.3,
+            'Quoted_Items' => [['Product_Name' => ['name' => 'A'], 'Quantity' => 1, 'List_Price' => 100, 'Total' => 100]],
+        ]);
+        $this->assertSame(100.0, $fallback->totalAmount());
+        $this->assertSame(10.0, $fallback->totalDiscount());
+        $this->assertSame(96.3, $fallback->grandTotal());
     }
 }

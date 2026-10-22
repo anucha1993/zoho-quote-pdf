@@ -135,7 +135,7 @@ class QuotePdfService
             $mpdf->WriteHTML($css, HTMLParserMode::HEADER_CSS);
         }
 
-        $mpdf->WriteHTML($inner);
+        $this->writeBodyWithFilledRows($mpdf, $inner, $doc);
 
         if ($closing !== null && trim($closing) !== '') {
             // วัดพื้นที่ที่เหลือจริงบนหน้าปัจจุบัน (mm) ถ้าไม่พอสำหรับส่วนปิดท้าย → ขึ้นหน้าใหม่ก่อน
@@ -159,6 +159,66 @@ class QuotePdfService
     }
 
     /**
+     * เขียนเนื้อหา โดยหยุดที่ marker <!--ITEMS_END count=N terms=0|1--> หลังตารางรายการ
+     * วัดตำแหน่ง y จริง แล้วเติมแถวว่าง (snippet <!--BLANKROWS-->) ให้ตารางยาวพอดีกรอบ/พอดีก่อนส่วนลงนาม
+     * ก่อนเขียนส่วนที่เหลือ (แถวยอดรวม, เงื่อนไข)
+     */
+    protected function writeBodyWithFilledRows(Mpdf $mpdf, string $inner, array $doc): void
+    {
+        // ดึง snippet แถวว่างออกจากเนื้อหา
+        $rowTable = null;
+        if (preg_match('/<!--BLANKROWS-->(.*?)<!--\/BLANKROWS-->/s', $inner, $b)) {
+            $inner = str_replace($b[0], '', $inner);
+            $rowTable = $b[1];
+        }
+
+        if ($rowTable === null || ! preg_match('/<!--ITEMS_END count=(\d+) terms=(\d)-->/', $inner, $m)) {
+            $mpdf->WriteHTML($inner);
+
+            return;
+        }
+
+        [$before, $after] = explode($m[0], $inner, 2);
+        $itemCount = (int) $m[1];
+        $termsOnNextPage = $m[2] === '1';
+
+        $mpdf->WriteHTML($before);
+
+        $minRows = (int) ($doc['min_item_rows'] ?? 3);
+        $hasRowTpl = preg_match('/<!--ROW-->(.*?)<!--\/ROW-->/s', $rowTable, $r) === 1;
+        $makeRows = fn (int $n) => str_replace($r[0], str_repeat($r[1], $n), $rowTable);
+
+        if ($hasRowTpl && ! empty($doc['fill_item_rows'])) {
+            // 1) เขียนแถวว่าง 1 แถวก่อนเพื่อวัดความสูงจริงที่ mPDF ใช้ (CSS height ของ tr ไม่ตรงกับที่ตั้งเสมอ)
+            $yBefore = $mpdf->y;
+            $pageBefore = $mpdf->page;
+            $mpdf->WriteHTML($makeRows(1));
+            $rowHeight = $mpdf->y - $yBefore;
+
+            if ($mpdf->page !== $pageBefore || $rowHeight <= 0.5) {
+                $rowHeight = (float) ($doc['item_row_height_mm'] ?? 9.0);
+            }
+
+            // 2) พื้นที่ที่เหลือ = ขอบล่างกรอบ − y − แถวยอดรวม (สูงกว่าแถวปกติเล็กน้อย) − (ส่วนลงนาม ถ้าอยู่หน้าเดียวกัน)
+            $frameBottom = $mpdf->h - $mpdf->bMargin - 1.5;
+            $reserve = $rowHeight * 1.2 + 1.0
+                + ($termsOnNextPage ? 0.0 : (float) ($doc['closing_height_mm'] ?? 67) + 3.0);
+            $more = (int) floor(($frameBottom - $mpdf->y - $reserve) / $rowHeight);
+
+            if ($more > 0) {
+                $mpdf->WriteHTML($makeRows($more));
+            }
+        } elseif ($hasRowTpl) {
+            $rows = max(0, $minRows - $itemCount);
+            if ($rows > 0) {
+                $mpdf->WriteHTML($makeRows($rows));
+            }
+        }
+
+        $mpdf->WriteHTML($after);
+    }
+
+    /**
      * วาดกรอบสี่เหลี่ยมรอบเนื้อหาในทุกหน้า: จากขอบบนถึงเหนือ footer เล็กน้อย
      */
     protected function drawFrames(Mpdf $mpdf): void
@@ -170,7 +230,7 @@ class QuotePdfService
         $h = $mpdf->h - $y - $mpdf->bMargin - 1.5;
 
         $mpdf->SetDrawColor(0);
-        $mpdf->SetLineWidth(0.18); // ≈ 0.5pt
+        $mpdf->SetLineWidth(0.11); // ≈ 0.3pt (บางเท่าเส้นตาราง)
 
         for ($p = 1; $p <= $lastPage; $p++) {
             $mpdf->page = $p;

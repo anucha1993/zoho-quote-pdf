@@ -9,8 +9,11 @@
     use App\Support\RichText;
 
     $items = $q->items();
-    $minRows = (int) ($doc['min_item_rows'] ?? 3);
-    $blankRows = max(0, $minRows - count($items));
+    // จำนวนแถวขั้นต่ำของตาราง:
+    //  - เมื่อเงื่อนไขขึ้นหน้า 2 (หน้า 1 มีแต่ตารางรายการ) → เติมแถวว่างให้เต็มหน้า (min_item_rows_full_page)
+    //  - เมื่อทุกอย่างอยู่หน้าเดียว → ใช้ค่าเดิมตามต้นแบบ (min_item_rows) ไม่ให้ดันส่วนลงนามตกหน้า
+    // แถวว่างในตารางถูกเติมโดย QuotePdfService (วัดพื้นที่จริง) — ที่นี่แค่บอกว่าเงื่อนไขจะขึ้นหน้าใหม่หรือไม่
+    $hasTermsPage = ($doc['terms_on_new_page'] ?? true) && trim($q->paymentTerms()) !== '';
 
     $headerImg = $company['header_image'] ?? null;
     $footerImg = $company['footer_image'] ?? null;
@@ -20,6 +23,11 @@
     // สัดส่วนคอลัมน์ Excel (A..L = 157.8 หน่วย) → เปอร์เซ็นต์ของความกว้างกระดาษ
     // (คอลัมน์ I ขยายเล็กน้อยจาก 12.58 → 14.3 เพื่อให้ "ใบเสนอราคาเลขที่ :" อยู่บรรทัดเดียวหลังขยายฟอนต์)
     $wA = 1.45; $wB = 7.97; $wCH = 55.58; $wI = 14.30; $wJ = 7.79; $wK = 12.58; $wL = 1.63;
+    // ตารางรายการใช้สัดส่วน ราคา/จำนวน/จำนวนเงิน ของตัวเอง (ผลรวมเท่า wI+wJ+wK): ขยายช่องจำนวนให้ "Total Discount" ในกล่องสรุปยอดอยู่บรรทัดเดียว
+    // (ช่อง "จำนวน" ต้องกว้างพอให้ "Total Discount" ไม่ดันคอลัมน์ของกล่องสรุปยอดให้เบี้ยว)
+    $tI = 15.50; $tJ = 11.50; $tK = 11.58;
+    $tSum = $tI + $tJ + $tK;
+    $tCH = round(100 - $wA - $wB - $tSum - $wL, 2);   // คอลัมน์รายการของตารางสินค้า (แคบลงเล็กน้อยจาก wCH)
 @endphp
 <!DOCTYPE html>
 <html lang="th">
@@ -52,21 +60,23 @@
     .rich ol, .rich ul { margin: 0 0 0 14pt; padding: 0; }
     .rich li { margin: 0; }
 
-    .bd  { border: 0.5pt solid #000; }
-    .bl  { border-left: 0.5pt solid #000; }
-    .br  { border-right: 0.5pt solid #000; }
-    .bt  { border-top: 0.5pt solid #000; }
-    .bb  { border-bottom: 0.5pt solid #000; }
-    .bb-thick { border-bottom: 1.5pt solid #000; }
+    /* เส้นตารางบาง 0.3pt (ต้นแบบ Excel "thin") เส้นล่างแถวยอดรวมหนากว่าเล็กน้อย */
+    .bd  { border: 0.3pt solid #000; }
+    .bl  { border-left: 0.3pt solid #000; }
+    .br  { border-right: 0.3pt solid #000; }
+    .bt  { border-top: 0.3pt solid #000; }
+    .bb  { border-bottom: 0.3pt solid #000; }
+    .bb-thick { border-bottom: 1.1pt solid #000; }
 
     .fill-pink { background: #E6B8B7; }
     .fill-grey { background: #D9D9D9; }
 
-    .f24 { font-size: 17.5pt; }   /* 24pt × 0.65 × 1.12 */
-    .f22 { font-size: 16pt; }     /* 22pt */
-    .f18 { font-size: 13pt; }     /* 18pt */
-    .f16 { font-size: 11.5pt; }   /* 16pt */
-    .f15 { font-size: 11pt; }     /* 15pt */
+    /* ขนาดตัวอักษรใช้ 3 ระดับให้สม่ำเสมอ: 13pt ทั่วไป, 14pt รายการสินค้า, 16pt หัวข้อบริการ (ป้ายรอง 11pt) */
+    .f24 { font-size: 16pt; }     /* หัวข้อการให้บริการ */
+    .f22 { font-size: 14pt; }     /* แถวรายการสินค้า */
+    .f18 { font-size: 13pt; }     /* ข้อความทั่วไป / ป้ายช่อง / เงื่อนไข */
+    .f16 { font-size: 11pt; }     /* ข้อความรอง / กล่องลงนาม */
+    .f15 { font-size: 11pt; }     /* หัวตารางภาษาอังกฤษ */
 
     /* กรอบนอกทั้งฟอร์ม (A1:L23) ยืดลงถึงเหนือ footer — mPDF ไม่รองรับ child selector จึงใช้ class ตรง ๆ */
     .frame { border: 0.5pt solid #000; padding: 0; }
@@ -74,7 +84,18 @@
     /* ส่วนปิดท้าย (ข้อความ + กล่องลงนาม) ตรึงไว้ล่างสุดของกรอบ */
     .closing-pinned { position: absolute; left: {{ $doc['margin_left_mm'] ?? 6 }}mm; bottom: {{ ($doc['margin_bottom_mm'] ?? 30) + 1 }}mm; width: {{ 210 - ($doc['margin_left_mm'] ?? 6) - ($doc['margin_right_mm'] ?? 4) }}mm; }
 
-    .sig-box { border: 0.5pt solid #000; height: 70pt; text-align: center; vertical-align: middle; }
+    .sig-box { border: 0.3pt solid #000; height: 70pt; text-align: center; vertical-align: middle; }
+
+    /* ตารางข้อมูลลูกค้า: เว้นระยะในช่องให้ข้อความไม่ชิดเส้น */
+    table.info td.bd { padding: 3pt 7pt; }
+
+    /* กล่องสรุปยอดท้ายตาราง: ไทย | อังกฤษ | จำนวนเงิน */
+    /* ความกว้างคอลัมน์ของกล่อง = คอลัมน์ ราคา / จำนวน / จำนวนเงิน ของตารางรายการ ให้เส้นตรงกัน */
+    table.totals td { height: 21pt; padding: 0 4pt; font-size: 13pt; white-space: nowrap; }
+    table.totals td.t1 { width: {{ round($tI / $tSum * 100, 2) }}%; }
+    /* ไทย/อังกฤษในกล่องใช้ 13pt เท่ากัน (วัดแล้ว "Total Discount" 13pt = 19.1mm < ช่อง 23mm) */
+    table.totals td.t2 { width: {{ round($tJ / $tSum * 100, 2) }}%; padding: 0 2pt; }
+    table.totals td.t3 { width: {{ round($tK / $tSum * 100, 2) }}%; }
     .sig-line { text-decoration: underline; }
     .pre { white-space: pre-wrap; }
 </style>
@@ -112,8 +133,8 @@
 <div class="content">
 
     {{-- ============ แถว 3-6 : ข้อมูลลูกค้า / เลขที่ / วันที่ / ผู้เสนอ ============ --}}
-    <table>
-        <tr style="height: 24.4pt; margin-top: 4pt;">
+    <table class="info">
+        <tr style="height: 26pt; margin-top: 4pt;">
             <td class="nopad" style="width: {{ $wA }}%;"></td>
             <td class="bd b l" style="width: {{ $wB }}%;">เรียน</td>
             <td class="bd b l" style="width: {{ $wCH }}%;">{{ $q->customerName() }}</td>
@@ -123,7 +144,8 @@
         </tr>
         <tr style="height: 28.8pt;">
             <td class="nopad"></td>
-            <td class="bd b l top" style="padding-top: 4pt;">ที่อยู่</td>
+            {{-- ป้าย "ที่อยู่" รวมเป็นเซลล์เดียวคู่กับช่องที่อยู่ 2 บรรทัด --}}
+            <td class="bd b l" rowspan="2">ที่อยู่</td>
             <td class="bd b l" rowspan="2">
                 {{ $q->billingLine1() }}<br>
                 {{ $q->billingLine2() }}
@@ -135,7 +157,6 @@
         </tr>
         <tr style="height: 24.4pt;">
             <td class="nopad"></td>
-            <td class="bd"></td>
             <td class="bd b l">ผู้เสนอราคา :</td>
             <td class="bd b c">{{ $q->salesName() }}</td>
             <td class="nopad"></td>
@@ -171,10 +192,10 @@
         <tr style="height: 38pt;">
             <td class="nopad" style="width: {{ $wA }}%;"></td>
             <td class="bd b c f15 fill-grey" style="width: {{ $wB }}%;">ลำดับที่<br>ITEM</td>
-            <td class="bd b c f15 fill-grey" style="width: {{ $wCH }}%;">รายการ<br>DESCRIPTION</td>
-            <td class="bd b c f15 fill-grey" style="width: {{ $wI }}%;">ราคา<br>Price</td>
-            <td class="bd b c f15 fill-grey" style="width: {{ $wJ }}%;">จำนวน<br>Quantity</td>
-            <td class="bd b c f15 fill-grey" style="width: {{ $wK }}%;">จำนวนเงิน<br>Amount</td>
+            <td class="bd b c f15 fill-grey" style="width: {{ $tCH }}%;">รายการ<br>DESCRIPTION</td>
+            <td class="bd b c f15 fill-grey" style="width: {{ $tI }}%;">ราคา<br>Price</td>
+            <td class="bd b c f15 fill-grey" style="width: {{ $tJ }}%;">จำนวน<br>Quantity</td>
+            <td class="bd b c f15 fill-grey" style="width: {{ $tK }}%;">จำนวนเงิน<br>Amount</td>
             <td class="nopad" style="width: {{ $wL }}%;"></td>
         </tr>
         </thead>
@@ -196,39 +217,77 @@
                 <td class="nopad"></td>
             </tr>
         @endforeach
-
-        @for($i = 0; $i < $blankRows; $i++)
-            <tr style="height: 25.4pt;">
-                <td class="nopad"></td>
-                <td class="bd">&nbsp;</td>
-                <td class="bd"></td>
-                <td class="bd"></td>
-                <td class="bd"></td>
-                <td class="bd"></td>
-                <td class="nopad"></td>
-            </tr>
-        @endfor
-
-        {{-- แถว 14 : ตัวอักษร + ยอดรวม (เส้นล่างหนา) --}}
-        <tr style="height: 25.4pt;">
-            <td class="nopad"></td>
-            <td class="bd bb-thick c bi f22" colspan="2">{{ $q->grandTotalText() }}</td>
-            <td class="bd bb-thick c bi f22 fill-grey" colspan="2">ยอดรวมทั้งหมด</td>
-            <td class="bd bb-thick r bi f22 fill-grey">{{ F::money($q->grandTotal(), false) }}</td>
-            <td class="nopad"></td>
-        </tr>
         </tbody>
     </table>
-
-    {{-- ============ แถว 15 : เว้น ============ --}}
-    <div style="height: 9pt;"></div>
-
-    {{-- ============ แถว 16 : เงื่อนไข และรายละเอียดการชำระเงิน ============ --}}
+    {{-- QuotePdfService หยุดตรงนี้เพื่อวัดตำแหน่งจริง แล้วเติมแถวว่าง (BLANKROWS) ให้พอดีกรอบก่อนเขียนแถวยอดรวม --}}
+    <!--ITEMS_END count={{ count($items) }} terms={{ $hasTermsPage ? 1 : 0 }}-->
+    <!--BLANKROWS-->
     <table>
+        <!--ROW-->
+        <tr style="height: 25.4pt;">
+            <td class="nopad" style="width: {{ $wA }}%;"></td>
+            <td class="bd" style="width: {{ $wB }}%;">&nbsp;</td>
+            <td class="bd" style="width: {{ $tCH }}%;"></td>
+            <td class="bd" style="width: {{ $tI }}%;"></td>
+            <td class="bd" style="width: {{ $tJ }}%;"></td>
+            <td class="bd" style="width: {{ $tK }}%;"></td>
+            <td class="nopad" style="width: {{ $wL }}%;"></td>
+        </tr>
+        <!--/ROW-->
+    </table>
+    <!--/BLANKROWS-->
+
+    {{-- แถว 14 : กล่องสรุปยอด (ขวา) + จำนวนเงินเป็นตัวอักษร (ซ้าย) --}}
+    <table style="margin-top: 6pt;">
         <tr>
-            <td class="l top f18 rich" style="padding: 0 4pt; min-height: 13pt;">{!! $termsHtml !!}</td>
+            <td class="nopad" style="width: {{ $wA }}%;"></td>
+            {{-- พื้นที่ซ้ายของกล่องสรุปยอดเว้นว่าง (ไม่แสดงจำนวนเงินเป็นตัวอักษร) --}}
+            <td class="nopad" style="width: {{ round(100 - $wA - $wL - $tSum, 2) }}%;"></td>
+            {{-- กล่องสรุปยอดกว้างเท่า 3 คอลัมน์ขวาของตารางรายการพอดี เส้นแบ่งจึงตรงกัน --}}
+            <td class="nopad" style="width: {{ $tSum }}%;">
+                <table class="totals">
+                    <tr>
+                        <td class="bd r b t1">รวมเป็นเงิน</td>
+                        <td class="bd c b t2 nowrap">Total Amount</td>
+                        <td class="bd r t3">{{ F::money($q->totalAmount(), false) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="bd r b t1">ส่วนลด</td>
+                        <td class="bd c b t2 nowrap">Total Discount</td>
+                        <td class="bd r t3">{{ F::money($q->totalDiscount(), false) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="bd r b t1">ภาษีมูลค่าเพิ่ม 7%</td>
+                        <td class="bd c b t2 nowrap">Total Tax</td>
+                        <td class="bd r t3">{{ F::money($q->totalTax(), false) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="bd r b t1">จำนวนเงินรวมทั้งสิ้น</td>
+                        <td class="bd c b t2 nowrap">Grand Total</td>
+                        <td class="bd r b t3">{{ F::money($q->grandTotal(), false) }}</td>
+                    </tr>
+                </table>
+            </td>
+            <td class="nopad" style="width: {{ $wL }}%;"></td>
         </tr>
     </table>
+
+    @if($termsHtml !== '')
+        {{-- หน้า 1 จบที่ตารางรายการ/ยอดรวม → เงื่อนไข/สิทธิประโยชน์ขึ้นหน้าใหม่ (ปิดได้ด้วย document.terms_on_new_page = false) --}}
+        @if($doc['terms_on_new_page'] ?? true)
+            <pagebreak />
+        @else
+            {{-- ============ แถว 15 : เว้น ============ --}}
+            <div style="height: 9pt;"></div>
+        @endif
+
+        {{-- ============ แถว 16 : เงื่อนไข และรายละเอียดการชำระเงิน ============ --}}
+        <table>
+            <tr>
+                <td class="l top f18 rich" style="padding: 2pt 4pt 0 4pt; min-height: 13pt;">{!! $termsHtml !!}</td>
+            </tr>
+        </table>
+    @endif
 
 </div>
 <!--CLOSING-->
