@@ -38,8 +38,8 @@ class QuoteData
 
     /**
      * ${Quotes.Quote Number} — เลขที่เอกสาร (ใช้เป็นชื่อไฟล์ด้วย)
-     * ใน org นี้ Subject เก็บเลขที่แบบ "PRE-MOU2026-0194" จึงอ่านตาม config zoho.fields.document_number
-     * แล้วถอยไปยัง number_fallback (Quotation_Number, Quote_Number) และ record id ตามลำดับ
+     * ใน org นี้คือ field "Quotation Number" (Quotation_Number) เช่น "IO2026-021613"
+     * อ่านตาม config zoho.fields.document_number แล้วถอยไปยัง number_fallback และ record id ตามลำดับ
      */
     public function number(): string
     {

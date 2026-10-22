@@ -73,10 +73,10 @@ return [
         'modified_time' => 'Modified_Time',
         'created_time' => 'Created_Time',
 
-        // เลขที่เอกสารที่แสดง/ใช้เป็นชื่อไฟล์ — ใน org นี้ Subject = "PRE-MOU2026-0194"
-        // (Quote_Number เป็น autonumber ตัวเลขยาว) ถ้าว่างจะลองตามลำดับใน number_fallback
-        'document_number' => env('ZOHO_FIELD_QUOTE_NUMBER', 'Subject'),
-        'number_fallback' => ['Quotation_Number', 'Quote_Number'],
+        // เลขที่เอกสาร ${Quotes.Quote Number} = field "Quotation Number" (formula) เช่น "IO2026-021613"
+        // ใช้แสดงในฟอร์มและเป็นชื่อไฟล์ PDF — ถ้าว่างจะลองตามลำดับใน number_fallback
+        'document_number' => env('ZOHO_FIELD_QUOTE_NUMBER', 'Quotation_Number'),
+        'number_fallback' => ['Subject', 'Quote_Number'],
 
         // Subform รายการสินค้า — ป้ายชื่อ "QT Thailand" ใน org นี้คือ subform มาตรฐาน Quoted_Items
         'items' => env('ZOHO_ITEMS_SUBFORM', 'Quoted_Items'),

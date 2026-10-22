@@ -54,6 +54,17 @@ class QuoteLink
         return $download ? $url.'?download=1' : $url;
     }
 
+    /**
+     * URL แบบสั้น (ไม่มี signature) เช่น https://pdf.trackingmouthefirst.com/6274719000184443042
+     * ใช้ได้เมื่อ QUOTE_ALLOW_UNSIGNED=true
+     */
+    public static function shortUrl(string $id, bool $download = false): string
+    {
+        $base = rtrim((string) config('quote.base_url'), '/');
+
+        return "{$base}/{$id}".($download ? '?download=1' : '');
+    }
+
     public static function length(): int
     {
         $length = (int) config('quote.signature_length', 64);

@@ -18,6 +18,11 @@ return [
     // base URL ของระบบ (ใช้สร้างลิงก์ / QR code)
     'base_url' => env('QUOTE_BASE_URL', env('APP_URL')),
 
+    // เปิด route แบบสั้น /{record_id} (ไม่มี signature) เพื่อให้ CRM สร้าง URL ได้ตรง ๆ
+    // เช่น https://pdf.trackingmouthefirst.com/6274719000184443042
+    // ข้อแลกเปลี่ยน: ใครรู้ record ID ก็เปิด PDF ได้ (ID 19 หลัก เดายาก แต่ไม่ใช่ความลับ)
+    'allow_unsigned' => (bool) env('QUOTE_ALLOW_UNSIGNED', false),
+
     // Rate limit ต่อ IP (จำนวน request ต่อนาที)
     'rate_limit_per_minute' => (int) env('QUOTE_RATE_LIMIT', 30),
 

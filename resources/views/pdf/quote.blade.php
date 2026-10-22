@@ -131,7 +131,7 @@
     <table>
         <tr style="height: 53pt;">
             <td class="nopad" style="width: {{ $wA }}%;"></td>
-            <td class="bd b c f24 fill-pink" style="width: {{ 100 - $wA - $wL }}%;">{{ $q->serviceSubject() }}</td>
+            <td class="bd b c f24 fill-pink" style="width: {{ 100 - $wA - $wL }}%; height: 53pt;">{{ $q->serviceSubject() !== '' ? $q->serviceSubject() : ' ' }}&nbsp;</td>
             <td class="nopad" style="width: {{ $wL }}%;"></td>
         </tr>
         <tr style="height: 19pt;">

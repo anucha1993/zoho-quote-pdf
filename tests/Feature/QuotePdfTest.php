@@ -20,6 +20,7 @@ class QuotePdfTest extends TestCase
         config([
             'quote.link_secret' => 'test-secret',
             'quote.signature_length' => 64,
+            'quote.allow_unsigned' => true,
             'quote.base_url' => 'http://localhost',
             'quote.storage_dir' => 'quotes-test',
             'quote.company.logo' => null,
@@ -159,8 +160,8 @@ class QuotePdfTest extends TestCase
 
         $this->get($this->url())->assertOk();
 
-        // token, quote(401), token(refresh), quote(200), account, contact, owner
-        Http::assertSentCount(7);
+        // token, quote(401), token(refresh), quote(200), account, contact, owner, staff(nickname)
+        Http::assertSentCount(8);
         $this->assertSame(2, collect(Http::recorded())->filter(
             fn ($pair) => str_contains($pair[0]->url(), '/oauth/v2/token')
         )->count(), 'token must be requested twice (initial + refresh after 401)');
@@ -188,6 +189,42 @@ class QuotePdfTest extends TestCase
     /* ------------------------------------------------------------------ */
     /*  helpers */
     /* ------------------------------------------------------------------ */
+
+    /* ------------------------------------------------------------------ */
+    /*  route แบบสั้น /{id} (QUOTE_ALLOW_UNSIGNED) */
+    /* ------------------------------------------------------------------ */
+
+    public function test_short_url_serves_pdf_when_unsigned_routes_enabled(): void
+    {
+        $this->fakeZoho();
+
+        $response = $this->get('/'.self::QUOTE_ID);
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringContainsString('P-PJ 2026-0688.pdf', $response->headers->get('Content-Disposition'));
+    }
+
+    public function test_short_url_rejects_non_numeric_or_short_ids(): void
+    {
+        Http::fake();
+
+        $this->get('/abc')->assertNotFound();
+        $this->get('/123')->assertNotFound();
+        Http::assertNothingSent();
+    }
+
+    public function test_short_attach_requires_key_header(): void
+    {
+        $this->fakeZoho();
+
+        $this->post('/'.self::QUOTE_ID.'/attach')->assertNotFound();
+        $this->post('/'.self::QUOTE_ID.'/attach', [], ['X-Quote-Key' => 'wrong'])->assertNotFound();
+
+        $this->post('/'.self::QUOTE_ID.'/attach', [], ['X-Quote-Key' => 'test-secret'])
+            ->assertOk()
+            ->assertJson(['ok' => true, 'attachment_id' => '6123456000000999999']);
+    }
 
     protected function url(): string
     {
@@ -240,10 +277,10 @@ class QuotePdfTest extends TestCase
     {
         return [
             'id' => self::QUOTE_ID,
-            // org นี้: Subject = เลขที่เอกสาร, Quote_Number = autonumber ตัวเลขยาว
+            // org นี้: Quotation_Number = เลขที่เอกสาร (${Quotes.Quote Number}), Quote_Number = ตัวเลขยาว
             'Quote_Number' => '6274719000183778842',
-            'Quotation_Number' => 'P-PJ2026-021470',
-            'Subject' => 'P-PJ 2026-0688',
+            'Quotation_Number' => 'P-PJ 2026-0688',
+            'Subject' => 'P-PJ2026-0194',
             'field2' => '2026-10-21',
             'field6' => 'ระบบติดตามเอกสารด้วย QR Code',
             'field7' => "1. ราคานี้รวมภาษีมูลค่าเพิ่ม 7%\n2. ชำระเงิน 50% เมื่อสั่งซื้อ และ 50% เมื่อส่งมอบ",

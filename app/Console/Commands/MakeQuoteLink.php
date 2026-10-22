@@ -25,6 +25,7 @@ class MakeQuoteLink extends Command
             ['Signature', QuoteLink::sign($id)],
             ['View URL', QuoteLink::url($id)],
             ['Download URL', QuoteLink::url($id, download: true)],
+            ['Short URL', config('quote.allow_unsigned') ? QuoteLink::shortUrl($id) : '(ปิดอยู่ — ตั้ง QUOTE_ALLOW_UNSIGNED=true)'],
         ]);
 
         return self::SUCCESS;

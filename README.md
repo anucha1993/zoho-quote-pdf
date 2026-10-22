@@ -109,20 +109,29 @@ COMPANY_PHONE="02-..."
 ### 5. ตรวจสอบ API name ของ field
 
 แบบฟอร์มอิง sheet **"คนเมียวดี (เขียว-แดง)"** ใน `ex/FA-SA.xlsx` ซึ่งใช้ merge field ของ Zoho
-ป้ายชื่อ field เป็นภาษาไทย Zoho จึงตั้ง API name ให้อัตโนมัติ ต้องเปิด
-**Setup → Developer Space → APIs → API Names → Quotes** แล้วใส่ค่าจริงใน `.env`:
+ค่าเริ่มต้นด้านล่างคือ API name จริงของ org 853559971 (ตรวจจาก API `settings/fields` เมื่อ 22 ต.ค. 2026)
+ถ้ามีการเปลี่ยน field ใน CRM ให้แก้ที่ `.env`:
 
-| merge field ในฟอร์ม | ตัวแปร `.env` | ค่าเริ่มต้น | ถ้าว่างจะใช้ |
+| merge field ในฟอร์ม | ตัวแปร `.env` | API name จริง | ถ้าว่างจะใช้ |
 |---|---|---|---|
-| `${Quotes.วันที่เสนอราคา}` | `ZOHO_FIELD_QUOTE_DATE` | `Quote_Date` | Created_Time |
-| `${Quotes.หัวข้อการให้บริการ}` | `ZOHO_FIELD_SERVICE_SUBJECT` | `Service_Subject` | Subject |
-| `${Quotes.ชื่อจริง}` | `ZOHO_FIELD_SALES_FIRST_NAME` | `Sales_First_Name` | ชื่อ Owner |
-| `${Quotes.นามสกุล}` | `ZOHO_FIELD_SALES_LAST_NAME` | `Sales_Last_Name` | |
-| `${Lookup:รหัสพนักงาน.ชื่อเล่น}` | `ZOHO_FIELD_EMPLOYEE_LOOKUP` / `ZOHO_EMPLOYEE_MODULE` / `ZOHO_FIELD_EMPLOYEE_NICKNAME` | `Employee_Code` / `Employees` / `Nickname` | ไม่แสดง |
-| `${Quotes.เงื่อนไข และรายละเอียการชำระเงิน}` | `ZOHO_FIELD_PAYMENT_TERMS` | `Payment_Terms` | Terms_and_Conditions |
-| `${Quotes.ISO}` | `ZOHO_FIELD_ISO` | `ISO` | `QUOTE_FORM_CODE` |
-| `${QT Thailand.*}` (subform) | `ZOHO_ITEMS_SUBFORM` | `QT_Thailand` | Quoted_Items |
+| `${Quotes.Quote Number}` (เลขที่เอกสาร/ชื่อไฟล์) | `ZOHO_FIELD_QUOTE_NUMBER` | `Quotation_Number` เช่น `IO2026-021613` | Subject → Quote_Number |
+| `${Quotes.วันที่เสนอราคา}` | `ZOHO_FIELD_QUOTE_DATE` | `field2` | Created_Time |
+| `${Quotes.หัวข้อการให้บริการ}` | `ZOHO_FIELD_SERVICE_SUBJECT` | `field6` | เว้นว่าง (แถบชมพูคงไว้) |
+| `${Quotes.ชื่อจริง}` / `${Quotes.นามสกุล}` | `ZOHO_FIELD_SALES_FIRST_NAME` / `..._LAST_NAME` | `First_Name` / `Last_Name` | ชื่อ Owner |
+| `${Lookup:รหัสพนักงาน.ชื่อเล่น}` | `ZOHO_FIELD_EMPLOYEE_LOOKUP` / `ZOHO_EMPLOYEE_MODULE` / `ZOHO_FIELD_EMPLOYEE_NICKNAME` | `Sales_Code` → module `Staffs` → `Nickname` | ไม่แสดง |
+| `${Quotes.เงื่อนไข และรายละเอียการชำระเงิน}` | `ZOHO_FIELD_PAYMENT_TERMS` | `field7` | Terms_and_Conditions |
+| `${Quotes.ISO}` | `ZOHO_FIELD_ISO` | `ISO` (picklist) | `QUOTE_FORM_CODE` |
+| `${QT Thailand.*}` (subform) | `ZOHO_ITEMS_SUBFORM` | `Quoted_Items` (S.NO = `Sequence_Number`, Amount = `Total`) | QT_Thailand |
 | `${Contacts.Mobile}` | (ดึงจาก Contact อัตโนมัติ) | `Mobile` | Phone |
+
+**ยอดรวมทั้งหมด** คำนวณจากผลรวมช่อง Amount ของทุกรายการ (= `Sub_Total` ก่อน VAT) ตามสูตร `=SUM()` ในต้นแบบ
+ไม่ใช้ `Grand_Total` ของ Zoho ซึ่งรวม VAT แล้ว
+
+Scope ที่ Self Client ต้องมี:
+```
+ZohoCRM.modules.quotes.READ,ZohoCRM.modules.accounts.READ,ZohoCRM.modules.contacts.READ,ZohoCRM.users.READ,ZohoCRM.modules.attachments.CREATE,ZohoCRM.modules.custom.READ,ZohoCRM.settings.fields.READ
+```
+(`modules.custom.READ` ใช้อ่าน module Staffs เพื่อดึงชื่อเล่น, `settings.fields.READ` ใช้ตรวจ API name)
 
 ค่าอื่นในฟอร์ม:
 
@@ -153,6 +162,12 @@ php artisan serve                               # แล้วเปิด URL �
 ```
 
 ## ฝั่ง Zoho CRM
+
+**แบบง่าย (ค่าเริ่มต้น):** เปิด `QUOTE_ALLOW_UNSIGNED=true` แล้วสร้าง Custom Button ใน Quotes
+ชนิด **Open a URL** ชี้ไปที่ `https://pdf.trackingmouthefirst.com/${Quotes.Quote Id}`
+ไม่ต้องเขียน Deluge รายละเอียดใน `docs/deluge/README.md`
+
+**แบบมี signature (ปลอดภัยกว่า สำหรับส่งลูกค้าภายนอก):**
 
 1. สร้าง field ใน **Quotes**: ชื่อ `Quote PDF URL` ชนิด **URL** (API name `Quote_PDF_URL`)
 2. สร้าง **Organization Variable** ชื่อ `quote_link_secret` ค่าเดียวกับ `QUOTE_LINK_SECRET`
