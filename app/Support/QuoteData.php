@@ -170,9 +170,9 @@ class QuoteData implements PrintableRecord
      */
     public function billingLine1(): string
     {
-        $b = $this->f['billing'];
+        $src = $this->billingSource();
 
-        return $this->joinParts([$this->quote[$b['street']] ?? null, $this->quote[$b['city']] ?? null]);
+        return $this->joinParts([$src['street'] ?? null, $src['city'] ?? null]);
     }
 
     /**
@@ -180,9 +180,39 @@ class QuoteData implements PrintableRecord
      */
     public function billingLine2(): string
     {
-        $b = $this->f['billing'];
+        $src = $this->billingSource();
 
-        return $this->joinParts([$this->quote[$b['state']] ?? null, $this->quote[$b['code']] ?? null], '  ');
+        return $this->joinParts([$src['state'] ?? null, $src['code'] ?? null], '  ');
+    }
+
+    /**
+     * ที่อยู่ที่ใช้พิมพ์: Billing ของ Quote ก่อน ถ้าว่างทั้งหมดใช้ Billing ของ Account (ลูกค้า) แทน
+     *
+     * @return array{street: ?string, city: ?string, state: ?string, code: ?string, country: ?string}
+     */
+    protected function billingSource(): array
+    {
+        $b = $this->f['billing'];
+        $fromQuote = [
+            'street' => $this->quote[$b['street']] ?? null,
+            'city' => $this->quote[$b['city']] ?? null,
+            'state' => $this->quote[$b['state']] ?? null,
+            'code' => $this->quote[$b['code']] ?? null,
+            'country' => $this->quote[$b['country']] ?? null,
+        ];
+
+        if ($this->joinParts($fromQuote) !== '') {
+            return $fromQuote;
+        }
+
+        // Accounts ใช้ API name มาตรฐาน Billing_Street / Billing_City / Billing_State / Billing_Code / Billing_Country
+        return [
+            'street' => $this->account['Billing_Street'] ?? null,
+            'city' => $this->account['Billing_City'] ?? null,
+            'state' => $this->account['Billing_State'] ?? null,
+            'code' => $this->account['Billing_Code'] ?? null,
+            'country' => $this->account['Billing_Country'] ?? null,
+        ];
     }
 
     /**

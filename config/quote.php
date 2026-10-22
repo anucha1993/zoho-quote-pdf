@@ -117,12 +117,9 @@ return [
                 'header_height_mm' => 6,
                 'margin_top_mm' => 10,
                 'margin_bottom_mm' => 12,
-                'closing_height_mm' => 40,
             ],
             'texts' => [
                 'tracking_title' => 'Deal Information & Tracking',
-                'sign_opener' => 'ผู้เปิดใบงาน',
-                'sign_approver' => 'ผู้อนุมัติ',
             ],
         ],
         'FA-SA-CN' => $cnForm,
