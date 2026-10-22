@@ -235,8 +235,17 @@ class QuotePdfTest extends TestCase
     {
         return [
             'id' => self::QUOTE_ID,
-            'Quote_Number' => 'P-PJ 2026-0688',
-            'Subject' => 'ระบบติดตามเอกสารด้วย QR Code',
+            // org นี้: Subject = เลขที่เอกสาร, Quote_Number = autonumber ตัวเลขยาว
+            'Quote_Number' => '6274719000183778842',
+            'Quotation_Number' => 'P-PJ2026-021470',
+            'Subject' => 'P-PJ 2026-0688',
+            'field2' => '2026-10-21',
+            'field6' => 'ระบบติดตามเอกสารด้วย QR Code',
+            'field7' => "1. ราคานี้รวมภาษีมูลค่าเพิ่ม 7%\n2. ชำระเงิน 50% เมื่อสั่งซื้อ และ 50% เมื่อส่งมอบ",
+            'First_Name' => 'ปิยนุช',
+            'Last_Name' => 'จันทร์วงค์',
+            'Sales_Code' => ['name' => '6905040', 'id' => '6274719000134262169'],
+            'ISO' => 'FA-SA-02-103',
             'Quote_Stage' => 'Draft',
             'Valid_Till' => '2026-11-21',
             'Created_Time' => '2026-10-21T09:00:00+07:00',

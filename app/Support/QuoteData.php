@@ -303,17 +303,18 @@ class QuoteData
     }
 
     /**
-     * ยอดรวมทั้งหมด (=SUM ของช่อง Amount ในต้นแบบ) — ใช้ Grand_Total ถ้ามี ไม่งั้นรวมจากรายการ
+     * ยอดรวมทั้งหมด — ต้นแบบคือ =SUM(ช่อง Amount) จึงรวมจากรายการ (= Sub_Total ก่อนภาษี)
+     * ไม่ใช้ Grand_Total ของ Zoho ซึ่งรวม VAT แล้ว
      */
     public function grandTotal(): float
     {
-        $grand = $this->quote[$this->f['grand_total']] ?? null;
+        $items = $this->items();
 
-        if ($grand !== null && $grand !== '') {
-            return (float) $grand;
+        if ($items !== []) {
+            return round(array_sum(array_column($items, 'total')), 2);
         }
 
-        return array_sum(array_column($this->items(), 'total'));
+        return $this->subTotal() ?: (float) ($this->quote[$this->f['grand_total']] ?? 0);
     }
 
     public function grandTotalText(): string
