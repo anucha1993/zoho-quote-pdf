@@ -138,6 +138,20 @@ class QuotePdfTest extends TestCase
         $this->assertFileExists($secondPath);
     }
 
+    public function test_template_or_config_change_invalidates_cache(): void
+    {
+        $this->fakeZoho();
+        $first = $this->get($this->url())->assertOk();
+        $firstPath = $first->baseResponse->getFile()->getPathname();
+
+        // เปลี่ยน config ของเอกสาร (เช่น ชื่อผู้อนุมัติ) โดย Quote ไม่ได้ถูกแก้ → ต้องได้ไฟล์ใหม่
+        config(['quote.approver.name' => 'ผู้อนุมัติคนใหม่']);
+        $second = $this->get($this->url())->assertOk();
+        $secondPath = $second->baseResponse->getFile()->getPathname();
+
+        $this->assertNotSame($firstPath, $secondPath);
+    }
+
     public function test_zoho_outage_returns_502(): void
     {
         Http::fake([
@@ -203,6 +217,37 @@ class QuotePdfTest extends TestCase
         $response->assertOk();
         $response->assertHeader('Content-Type', 'application/pdf');
         $this->assertStringContainsString('P-PJ 2026-0688.pdf', $response->headers->get('Content-Disposition'));
+    }
+
+    public function test_form_url_serves_pdf_for_named_form(): void
+    {
+        $this->fakeZoho();
+
+        $this->get('/FA-SA-TH/'.self::QUOTE_ID)
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/pdf')
+            ->assertHeader('X-Quote-Form', 'FA-SA-TH');
+
+        // slug ไม่สนตัวพิมพ์
+        $this->get('/fa-sa-th/'.self::QUOTE_ID)->assertOk()->assertHeader('X-Quote-Form', 'FA-SA-TH');
+    }
+
+    public function test_unknown_form_returns_404_without_calling_zoho(): void
+    {
+        Http::fake();
+
+        $this->get('/FA-SA-XX/'.self::QUOTE_ID)->assertNotFound();
+        $this->get('/quote/FA-SA-XX/'.self::QUOTE_ID.'.'.QuoteLink::sign(self::QUOTE_ID))->assertNotFound();
+        Http::assertNothingSent();
+    }
+
+    public function test_signed_form_url_serves_pdf(): void
+    {
+        $this->fakeZoho();
+
+        $this->get('/quote/FA-SA-TH/'.self::QUOTE_ID.'.'.QuoteLink::sign(self::QUOTE_ID))
+            ->assertOk()
+            ->assertHeader('X-Quote-Form', 'FA-SA-TH');
     }
 
     public function test_short_url_rejects_non_numeric_or_short_ids(): void

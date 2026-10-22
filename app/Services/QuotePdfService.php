@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Pdf\ThaiLanguageToFont;
 use App\Support\QuoteData;
+use App\Support\QuoteForm;
 use App\Support\QuoteLink;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
@@ -13,10 +14,10 @@ use Mpdf\Mpdf;
 use Mpdf\Output\Destination;
 
 /**
- * สร้างไฟล์ PDF ใบเสนอราคาจากข้อมูล Zoho และจัดการ cache ไฟล์
+ * สร้างไฟล์ PDF ใบเสนอราคาจากข้อมูล Zoho ตามแบบฟอร์มที่เลือก และจัดการ cache ไฟล์
  *
- * cache key = quote:{id}:{Modified_Time}
- * → ถ้า Quote ไม่ถูกแก้ไข จะใช้ไฟล์เดิมโดยไม่ render ใหม่
+ * cache key = quote:{id}:{Modified_Time}:{form}:{templateVersion}
+ * → สร้างใหม่เมื่อ Quote ถูกแก้ใน CRM หรือ template/config/รูป ของฟอร์มเปลี่ยน
  */
 class QuotePdfService
 {
@@ -43,17 +44,18 @@ class QuotePdfService
     /**
      * คืน path ของไฟล์ PDF — สร้างใหม่เฉพาะเมื่อยังไม่มีไฟล์ของเวอร์ชันนี้ (cache miss)
      */
-    public function getPdfPath(QuoteData $quote): string
+    public function getPdfPath(QuoteData $quote, ?QuoteForm $form = null): string
     {
-        $path = $this->cachePath($quote);
+        $form ??= QuoteForm::default();
+        $path = $this->cachePath($quote, $form);
 
         if (is_file($path) && filesize($path) > 0) {
-            Log::channel('zoho')->debug('PDF cache hit', ['quote' => $quote->id(), 'path' => basename($path)]);
+            Log::channel('zoho')->debug('PDF cache hit', ['quote' => $quote->id(), 'form' => $form->slug, 'path' => basename($path)]);
 
             return $path;
         }
 
-        $binary = $this->render($quote);
+        $binary = $this->render($quote, $form);
 
         $dir = dirname($path);
         if (! is_dir($dir)) {
@@ -65,7 +67,7 @@ class QuotePdfService
         file_put_contents($tmp, $binary);
         rename($tmp, $path);
 
-        Log::channel('zoho')->info('PDF rendered', ['quote' => $quote->id(), 'bytes' => strlen($binary)]);
+        Log::channel('zoho')->info('PDF rendered', ['quote' => $quote->id(), 'form' => $form->slug, 'bytes' => strlen($binary)]);
 
         return $path;
     }
@@ -73,27 +75,30 @@ class QuotePdfService
     /**
      * อ่านเนื้อหา PDF (ใช้ cache ถ้ามี)
      */
-    public function getPdfBinary(QuoteData $quote): string
+    public function getPdfBinary(QuoteData $quote, ?QuoteForm $form = null): string
     {
-        return (string) file_get_contents($this->getPdfPath($quote));
+        return (string) file_get_contents($this->getPdfPath($quote, $form));
     }
 
     /**
-     * สร้าง PDF จาก Blade view ด้วย mPDF และคืนค่าเป็น binary string
+     * สร้าง PDF จาก Blade view ของฟอร์มด้วย mPDF และคืนค่าเป็น binary string
      */
-    public function render(QuoteData $quote): string
+    public function render(QuoteData $quote, ?QuoteForm $form = null): string
     {
-        $html = View::make('pdf.quote', [
+        $form ??= QuoteForm::default();
+
+        $html = View::make($form->view, [
             'q' => $quote,
-            'company' => config('quote.company'),
-            'approver' => config('quote.approver'),
-            'texts' => config('quote.texts'),
-            'doc' => config('quote.document'),
-            'formCode' => config('quote.form_code'),
-            'trackingUrl' => config('quote.show_qr') ? QuoteLink::url($quote->id()) : null,
+            'form' => $form,
+            'company' => array_merge(config('quote.company'), $form->option('company', [])),
+            'approver' => array_merge(config('quote.approver'), $form->option('approver', [])),
+            'texts' => array_merge(config('quote.texts'), $form->option('texts', [])),
+            'doc' => array_merge(config('quote.document'), $form->option('document', [])),
+            'formCode' => $form->option('form_code', config('quote.form_code')),
+            'trackingUrl' => config('quote.show_qr') ? QuoteLink::url($quote->id(), form: $form->slug) : null,
         ])->render();
 
-        $mpdf = $this->makeMpdf();
+        $mpdf = $this->makeMpdf($form);
         $mpdf->SetTitle($quote->number());
         $mpdf->SetAuthor(config('quote.company.name_th', ''));
         $mpdf->SetSubject($quote->serviceSubject());
@@ -104,29 +109,61 @@ class QuotePdfService
     }
 
     /**
-     * cache key ตามข้อกำหนด: quote:{id}:{Modified_Time}
+     * cache key: quote:{id}:{Modified_Time}:{form}:{templateVersion}
      */
-    public function cacheKey(QuoteData $quote): string
+    public function cacheKey(QuoteData $quote, ?QuoteForm $form = null): string
     {
-        return "quote:{$quote->id()}:{$quote->modifiedTime()}";
+        $form ??= QuoteForm::default();
+
+        return "quote:{$quote->id()}:{$quote->modifiedTime()}:{$form->slug}:".$this->templateVersion($form);
     }
 
     /**
-     * path ไฟล์ใน storage/app/quotes/ — ใช้ hash ของ cache key เป็นชื่อไฟล์
+     * ลายนิ้วมือของ "เวอร์ชันเอกสาร" = template Blade ของฟอร์ม + config quote.* + ไฟล์รูปที่ใช้
+     * เปลี่ยนเมื่อ deploy เวอร์ชันใหม่ → PDF ถูกสร้างใหม่โดยไม่ต้องรอให้ Quote ถูกแก้ใน CRM
      */
-    public function cachePath(QuoteData $quote): string
+    public function templateVersion(?QuoteForm $form = null): string
     {
-        $dir = storage_path('app/'.trim(config('quote.storage_dir', 'quotes'), '/'));
+        $form ??= QuoteForm::default();
 
-        return $dir.DIRECTORY_SEPARATOR.$quote->id().'_'.substr(sha1($this->cacheKey($quote)), 0, 16).'.pdf';
+        // คำนวณใหม่ทุกครั้ง (ราคาถูก: filemtime ไม่กี่ไฟล์) เพื่อให้เห็นการเปลี่ยน config ทันที
+        $parts = [json_encode(config('quote')), $form->slug];
+
+        $files = [
+            $form->viewPath(),
+            config('quote.company.header_image'),
+            config('quote.company.footer_image'),
+            config('quote.approver.signature'),
+        ];
+
+        foreach ($files as $file) {
+            if ($file && is_file($file)) {
+                $parts[] = $file.'|'.filemtime($file).'|'.filesize($file);
+            }
+        }
+
+        return substr(sha1(implode("\n", $parts)), 0, 10);
+    }
+
+    /**
+     * path ไฟล์ใน storage/app/quotes/ — {id}_{form}_{hash}.pdf
+     */
+    public function cachePath(QuoteData $quote, ?QuoteForm $form = null): string
+    {
+        $form ??= QuoteForm::default();
+        $dir = storage_path('app/'.trim(config('quote.storage_dir', 'quotes'), '/'));
+        $slug = strtolower(preg_replace('/[^A-Za-z0-9_-]/', '', $form->slug));
+
+        return $dir.DIRECTORY_SEPARATOR.$quote->id().'_'.$slug.'_'.substr(sha1($this->cacheKey($quote, $form)), 0, 16).'.pdf';
     }
 
     /**
      * ตั้งค่า mPDF: กระดาษ A4, margin ตาม Excel ต้นแบบ, ฟอนต์ไทย Angsana New / TH Sarabun New
+     * ฟอร์มสามารถ override ค่าใน 'document' ได้ (paper, margin, font, font_size)
      */
-    protected function makeMpdf(): Mpdf
+    protected function makeMpdf(QuoteForm $form): Mpdf
     {
-        $doc = config('quote.document');
+        $doc = array_merge(config('quote.document'), $form->option('document', []));
         $font = $doc['font'] ?? 'angsananew';
 
         // ถ้าไม่มีไฟล์ฟอนต์ที่เลือก ให้ถอยไปใช้ TH Sarabun New
@@ -212,6 +249,23 @@ class QuotePdfService
         foreach (glob($dir.DIRECTORY_SEPARATOR.'*.tmp') ?: [] as $file) {
             if (filemtime($file) < time() - 3600) {
                 @unlink($file);
+            }
+        }
+
+        return $deleted;
+    }
+
+    /**
+     * ลบไฟล์ PDF ที่ cache ไว้ทั้งหมด — คืนจำนวนไฟล์ที่ลบ
+     */
+    public function clearAll(): int
+    {
+        $dir = storage_path('app/'.trim(config('quote.storage_dir', 'quotes'), '/'));
+        $deleted = 0;
+
+        foreach (glob($dir.DIRECTORY_SEPARATOR.'*.{pdf,tmp}', GLOB_BRACE) ?: [] as $file) {
+            if (@unlink($file)) {
+                $deleted++;
             }
         }
 

@@ -161,11 +161,30 @@ php artisan quotes:link 6123456000000123456   # ดู signature/URL
 php artisan serve                               # แล้วเปิด URL ที่ได้
 ```
 
+## แบบฟอร์มหลายแบบ
+
+URL รูปแบบ `https://pdf.trackingmouthefirst.com/{ฟอร์ม}/{record_id}` เช่น `/FA-SA-TH/6274719000184443042`
+
+| ฟอร์ม | ไฟล์ template | หมายเหตุ |
+|---|---|---|
+| `FA-SA-TH` | `resources/views/pdf/forms/fa-sa-th.blade.php` | ใบเสนอราคาภาษาไทย (ค่าเริ่มต้น) |
+
+**เพิ่มแบบฟอร์มใหม่** (เช่น `FA-SA-CN`):
+1. คัดลอก `fa-sa-th.blade.php` เป็น `resources/views/pdf/forms/fa-sa-cn.blade.php` แล้วแก้ layout
+   (ชื่อไฟล์ = slug ตัวพิมพ์เล็ก, ใน URL ใช้ตัวพิมพ์ใหญ่/เล็กก็ได้)
+2. (ไม่บังคับ) ใส่ override ใน `config/quote.php` → `forms['FA-SA-CN']` เช่น `label`, `form_code`,
+   `document` (กระดาษ/ฟอนต์/ขอบ), `texts`, `approver`, `company`
+3. ใช้งานได้ทันทีที่ `/FA-SA-CN/{id}` ไม่ต้องแก้ route/controller
+4. ทดสอบด้วย `php artisan quotes:link <id> --form=FA-SA-CN`
+
+ตัวแปรทั้งหมดที่ template ใช้ได้: `$q` (ข้อมูล Quote — ดู `app/Support/QuoteData.php`), `$form`,
+`$company`, `$approver`, `$texts`, `$doc`, `$formCode`, `$trackingUrl`
+
 ## ฝั่ง Zoho CRM
 
 **แบบง่าย (ค่าเริ่มต้น):** เปิด `QUOTE_ALLOW_UNSIGNED=true` แล้วสร้าง Custom Button ใน Quotes
-ชนิด **Open a URL** ชี้ไปที่ `https://pdf.trackingmouthefirst.com/${Quotes.Quote Id}`
-ไม่ต้องเขียน Deluge รายละเอียดใน `docs/deluge/README.md`
+ชนิด **Open a URL** ชี้ไปที่ `https://pdf.trackingmouthefirst.com/FA-SA-TH/${Quotes.Quote Id}`
+ไม่ต้องเขียน Deluge รายละเอียดใน `docs/deluge/README.md` (หลายฟอร์ม = หลายปุ่ม เปลี่ยนแค่ชื่อฟอร์มใน URL)
 
 **แบบมี signature (ปลอดภัยกว่า สำหรับส่งลูกค้าภายนอก):**
 

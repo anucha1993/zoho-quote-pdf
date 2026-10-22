@@ -52,14 +52,19 @@ ZOHO_REFRESH_TOKEN=...
 ```
 คัดลอกบรรทัด `ZOHO_FIELD_*`, `ZOHO_ITEMS_SUBFORM`, `QUOTE_FONT`, `QUOTE_APPROVER_*` จาก `.env.example` มาด้วย
 
-## 4. หลังแก้ `.env` ทุกครั้ง
+## 4. หลังแก้ `.env` หรืออัปโหลดโค้ดใหม่ทุกครั้ง
 
 ```bash
 php artisan config:clear
 php artisan route:clear
 php artisan view:clear
 php artisan optimize        # สร้าง cache ใหม่ (config + route)
+php artisan quotes:clear    # ล้าง PDF ที่ cache ไว้ (ไม่บังคับ — ระบบตรวจเวอร์ชัน template อัตโนมัติอยู่แล้ว)
 ```
+
+**PDF ใช้ข้อมูลล่าสุดเสมอ**: ทุก request จะดึง Quote จาก Zoho ก่อน ถ้า `Modified_Time` ของ Quote,
+ไฟล์ template, config หรือรูปหัว/ท้าย/ลายเซ็น อย่างใดอย่างหนึ่งเปลี่ยน จะสร้าง PDF ใหม่ทันที
+ไฟล์ cache เดิมจะถูกลบโดย `quotes:purge` ตาม `QUOTE_RETENTION_DAYS`
 ถ้าเคยรัน `config:cache` / `route:cache` ไว้ก่อนเพิ่ม `QUOTE_ALLOW_UNSIGNED` route แบบสั้นจะไม่ปรากฏจนกว่าจะ clear
 
 ## 5. ตรวจสอบ

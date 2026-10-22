@@ -6,14 +6,16 @@ use App\Exceptions\QuoteNotFoundException;
 use App\Exceptions\ZohoApiException;
 use App\Services\QuotePdfService;
 use App\Services\ZohoCrmService;
+use App\Support\QuoteForm;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Endpoint สำหรับแสดง/ดาวน์โหลด/แนบ PDF ใบเสนอราคา
+ * Endpoint สำหรับแสดง/ดาวน์โหลด/แนบ PDF ใบเสนอราคา ตามแบบฟอร์มที่เลือก
  *
- * signature ถูกตรวจแล้วใน middleware VerifyQuoteSignature (ผิด → 404)
+ * - {form} = slug ของแบบฟอร์ม เช่น FA-SA-TH (ไม่ระบุ = quote.default_form) ไม่พบ → 404
+ * - signature / key ถูกตรวจแล้วใน middleware (ผิด → 404)
  */
 class QuoteController extends Controller
 {
@@ -23,14 +25,19 @@ class QuoteController extends Controller
     ) {}
 
     /**
-     * GET /quote/{id}.{sig}            → แสดง PDF inline
-     * GET /quote/{id}.{sig}?download=1 → ดาวน์โหลด (ชื่อไฟล์ = Quote Number)
+     * GET /{form}/{id}            → แสดง PDF inline
+     * GET /{form}/{id}?download=1 → ดาวน์โหลด (ชื่อไฟล์ = เลขที่ใบเสนอราคา)
      */
-    public function show(Request $request, string $id): Response
+    public function show(Request $request): Response
     {
+        // อ่านจาก route โดยตรง เพราะ Laravel ส่ง parameter ตามลำดับใน URL ไม่ใช่ตามชื่อ
+        // (route /{id}.{sig} ไม่มี form, route /{form}/{id} มี form อยู่หน้า id)
+        $id = (string) $request->route('id');
+        $quoteForm = QuoteForm::find($request->route('form')) ?? abort(404);
+
         try {
             $quote = $this->pdf->load($id);
-            $path = $this->pdf->getPdfPath($quote);
+            $path = $this->pdf->getPdfPath($quote, $quoteForm);
         } catch (QuoteNotFoundException) {
             abort(404);
         } catch (ZohoApiException $e) {
@@ -50,17 +57,21 @@ class QuoteController extends Controller
             'Content-Disposition' => $disposition,
             'Cache-Control' => 'private, max-age=0, must-revalidate',
             'X-Robots-Tag' => 'noindex, nofollow',
+            'X-Quote-Form' => $quoteForm->slug,
         ]);
     }
 
     /**
-     * POST /quote/{id}.{sig}/attach → สร้าง PDF แล้วแนบกลับเข้า Quote ใน CRM
+     * POST /{form}/{id}/attach → สร้าง PDF แล้วแนบกลับเข้า Quote ใน CRM
      */
-    public function attach(string $id): JsonResponse
+    public function attach(Request $request): JsonResponse
     {
+        $id = (string) $request->route('id');
+        $quoteForm = QuoteForm::find($request->route('form')) ?? abort(404);
+
         try {
             $quote = $this->pdf->load($id);
-            $binary = $this->pdf->getPdfBinary($quote);
+            $binary = $this->pdf->getPdfBinary($quote, $quoteForm);
             $result = $this->zoho->uploadAttachment($id, $binary, $quote->filename());
         } catch (QuoteNotFoundException) {
             abort(404);
@@ -74,6 +85,7 @@ class QuoteController extends Controller
         return response()->json([
             'ok' => true,
             'quote_id' => $id,
+            'form' => $quoteForm->slug,
             'filename' => $quote->filename(),
             'attachment_id' => $result['details']['id'] ?? null,
         ]);

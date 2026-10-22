@@ -11,20 +11,27 @@
    - Button name: `Print PDF`
    - Where: **Detail Page** (หรือ View Page / List view ตามต้องการ)
    - Action: **Open a URL**
-   - URL:
+   - URL (รูปแบบ `/{ชื่อฟอร์ม}/{record id}`):
      ```
-     https://pdf.trackingmouthefirst.com/${Quotes.Quote Id}
+     https://pdf.trackingmouthefirst.com/FA-SA-TH/${Quotes.Quote Id}
      ```
    - Open in: **New window**
 3. กด Save แล้วเลือก profile ที่มองเห็นปุ่ม
 
 ผลลัพธ์: กดปุ่มแล้วเปิด PDF ทันที ระบบจะดึงข้อมูลล่าสุดจาก CRM สร้าง PDF และ cache ไว้
-จนกว่า Quote จะถูกแก้ไข (Modified Time เปลี่ยน)
+จนกว่า Quote จะถูกแก้ไข (Modified Time เปลี่ยน) หรือ template ถูกอัปเดต
+
+**หลายฟอร์ม:** สร้างปุ่มละ 1 ฟอร์ม เปลี่ยนเฉพาะชื่อฟอร์มใน URL เช่น
+`https://pdf.trackingmouthefirst.com/FA-SA-CN/${Quotes.Quote Id}`
+รายชื่อฟอร์มที่มี = ไฟล์ใน `resources/views/pdf/forms/` (ดู README หัวข้อ "เพิ่มแบบฟอร์มใหม่")
 
 ถ้าต้องการให้ **ดาวน์โหลด** แทนเปิดในแท็บ ใส่ `?download=1` ต่อท้าย:
 ```
-https://pdf.trackingmouthefirst.com/${Quotes.Quote Id}?download=1
+https://pdf.trackingmouthefirst.com/FA-SA-TH/${Quotes.Quote Id}?download=1
 ```
+
+ถ้าไม่ระบุชื่อฟอร์ม (`https://pdf.trackingmouthefirst.com/${Quotes.Quote Id}`) จะใช้ฟอร์มเริ่มต้น
+ตาม `QUOTE_DEFAULT_FORM` (ค่าเริ่มต้น FA-SA-TH)
 
 ### (ทางเลือก) เก็บ URL ไว้ใน field เพื่อส่งอีเมล/แสดงในหน้า record
 
@@ -55,7 +62,7 @@ string attachQuotePdf(Int quoteId)
 
     resp = invokeurl
     [
-        url : "https://pdf.trackingmouthefirst.com/" + quoteId.toString() + "/attach"
+        url : "https://pdf.trackingmouthefirst.com/FA-SA-TH/" + quoteId.toString() + "/attach"
         type : POST
         headers : headers
     ];

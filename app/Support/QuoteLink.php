@@ -9,6 +9,7 @@ use InvalidArgumentException;
  *
  * signature = HMAC-SHA256(id, QUOTE_LINK_SECRET) แบบ hex ตัวพิมพ์เล็ก
  * ตัดความยาวตาม config quote.signature_length (ค่าเริ่มต้น 64 = เต็ม)
+ * signature ผูกกับ record id อย่างเดียว จึงใช้ได้กับทุกแบบฟอร์มของ Quote เดียวกัน
  *
  * ฝั่ง Deluge ต้องสร้างด้วยวิธีเดียวกัน (ดู docs/deluge/)
  */
@@ -43,26 +44,30 @@ class QuoteLink
     }
 
     /**
-     * สร้าง URL เต็มของเอกสาร เช่น https://host/quote/1234.abcd...
+     * URL แบบมี signature
+     *   ไม่ระบุ form → https://host/quote/{id}.{sig}            (ฟอร์มเริ่มต้น)
+     *   ระบุ form   → https://host/quote/{form}/{id}.{sig}
      */
-    public static function url(string $id, bool $download = false): string
+    public static function url(string $id, bool $download = false, ?string $form = null): string
     {
         $base = rtrim((string) config('quote.base_url'), '/');
+        $prefix = $form ? "/quote/{$form}/" : '/quote/';
 
-        $url = "{$base}/quote/{$id}.".self::sign($id);
+        $url = "{$base}{$prefix}{$id}.".self::sign($id);
 
         return $download ? $url.'?download=1' : $url;
     }
 
     /**
-     * URL แบบสั้น (ไม่มี signature) เช่น https://pdf.trackingmouthefirst.com/6274719000184443042
-     * ใช้ได้เมื่อ QUOTE_ALLOW_UNSIGNED=true
+     * URL แบบสั้น (ไม่มี signature) ใช้ได้เมื่อ QUOTE_ALLOW_UNSIGNED=true
+     *   https://pdf.trackingmouthefirst.com/FA-SA-TH/6274719000184443042
      */
-    public static function shortUrl(string $id, bool $download = false): string
+    public static function shortUrl(string $id, bool $download = false, ?string $form = null): string
     {
         $base = rtrim((string) config('quote.base_url'), '/');
+        $form ??= (string) config('quote.default_form');
 
-        return "{$base}/{$id}".($download ? '?download=1' : '');
+        return "{$base}/{$form}/{$id}".($download ? '?download=1' : '');
     }
 
     public static function length(): int

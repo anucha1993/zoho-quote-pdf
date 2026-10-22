@@ -243,6 +243,11 @@
             </td>
             <td class="nopad" style="width: 3.8%;"></td>
             <td class="sig-box f16" style="width: 22.9%;">
+                @php $sigImg = $approver['signature'] ?? null; @endphp
+                @if($sigImg && is_file($sigImg))
+                    {{-- ลายเซ็นผู้อนุมัติ วางเหนือเส้นลงนาม --}}
+                    <div style="margin-bottom: -6pt;"><img src="{{ $sigImg }}" style="height: {{ $approver['signature_height_pt'] ?? 34 }}pt;"></div>
+                @endif
                 <div>(<span class="sig-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>)</div>
                 <div class="b">( {{ $approver['name'] }} )</div>
                 <div class="b">{{ $approver['title'] }}</div>

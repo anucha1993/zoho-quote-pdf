@@ -23,6 +23,20 @@ return [
     // ข้อแลกเปลี่ยน: ใครรู้ record ID ก็เปิด PDF ได้ (ID 19 หลัก เดายาก แต่ไม่ใช่ความลับ)
     'allow_unsigned' => (bool) env('QUOTE_ALLOW_UNSIGNED', false),
 
+    /*
+    | แบบฟอร์ม PDF — URL: https://pdf.trackingmouthefirst.com/{form}/{record_id}
+    | slug ของฟอร์ม = ชื่อไฟล์ใน resources/views/pdf/forms/ (ตัวพิมพ์เล็ก)
+    | เพิ่มฟอร์มใหม่ได้โดยวางไฟล์ Blade เพิ่ม ไม่ต้องแก้ที่นี่ (ใส่เฉพาะเมื่อต้องการ override ค่า)
+    */
+    'default_form' => env('QUOTE_DEFAULT_FORM', 'FA-SA-TH'),
+    'forms' => [
+        'FA-SA-TH' => [
+            'label' => 'ใบเสนอราคา ภาษาไทย (FA-SA)',
+            'view' => 'pdf.forms.fa-sa-th',
+        ],
+        // 'FA-SA-CN' => ['label' => 'ใบเสนอราคา ภาษาจีน', 'view' => 'pdf.forms.fa-sa-cn'],
+    ],
+
     // Rate limit ต่อ IP (จำนวน request ต่อนาที)
     'rate_limit_per_minute' => (int) env('QUOTE_RATE_LIMIT', 30),
 
@@ -52,6 +66,9 @@ return [
     'approver' => [
         'name' => env('QUOTE_APPROVER_NAME', 'นายเฟื่องฟู ชีวินมหรัตน์'),
         'title' => env('QUOTE_APPROVER_TITLE', 'กรรมการผู้จัดการ/ผู้อนุมัติเสนอราคา'),
+        // รูปลายเซ็นผู้อนุมัติ (PNG พื้นโปร่ง) — ตั้งเป็นค่าว่างถ้าไม่ต้องการพิมพ์ลายเซ็น
+        'signature' => env('QUOTE_APPROVER_SIGNATURE', resource_path('images/signature-approver.png')),
+        'signature_height_pt' => (int) env('QUOTE_APPROVER_SIGNATURE_HEIGHT', 34),
     ],
 
     // ข้อความคงที่ในแบบฟอร์ม (ตรงกับ sheet "คนเมียวดี (เขียว-แดง)")
