@@ -112,6 +112,13 @@ return [
             'label' => 'Deal Information & Tracking (ใบงาน)',
             'view' => 'pdf.forms.tracking',
             'module' => 'Deals',
+            // ไม่มีหัว/ท้ายกระดาษ → ไม่ต้องจองพื้นที่ ใช้ขอบกระดาษปกติ
+            'document' => [
+                'header_height_mm' => 6,
+                'margin_top_mm' => 10,
+                'margin_bottom_mm' => 12,
+                'closing_height_mm' => 40,
+            ],
             'texts' => [
                 'tracking_title' => 'Deal Information & Tracking',
                 'sign_opener' => 'ผู้เปิดใบงาน',
@@ -218,9 +225,9 @@ return [
         'margin_right_mm' => 4,
         'margin_top_mm' => 4.5,
         // ความสูงพื้นที่หัวกระดาษ (ภาพโลโก้/ที่อยู่) ที่ซ้ำทุกหน้า — margin บนของเนื้อหา = margin_top_mm + ค่านี้
-        'header_height_mm' => 30,
+        'header_height_mm' => 32,
         // ขอบล่างเผื่อพื้นที่ท้ายกระดาษ (รูป ISO/LINE/QR + รหัสฟอร์ม) ซึ่งตรึงไว้ล่างสุดของทุกหน้า
-        'margin_bottom_mm' => 30,
+        'margin_bottom_mm' => 31,
         'margin_footer_mm' => 3,
         // ฟอนต์ตามต้นแบบ: Angsana New (มี fallback เป็น TH Sarabun New ถ้าไม่มีไฟล์)
         'font' => env('QUOTE_FONT', 'angsananew'),

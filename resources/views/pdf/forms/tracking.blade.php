@@ -14,7 +14,7 @@
     $rows = $q->trackingRows();
 @endphp
 @include('pdf.forms.partials._head')
-@include('pdf.forms.partials._header')
+{{-- ฟอร์มนี้ไม่ใช้หัวกระดาษ/ท้ายกระดาษของบริษัท (ไม่ include _header/_footer) ขอบกระดาษกำหนดใน config forms['TRACKING']['document'] --}}
 
 <style>
     table.kv td { padding: 2pt 4pt; vertical-align: top; }
@@ -84,9 +84,7 @@
         <tr style="height: 90pt;">
             <td class="nopad" style="width: 22%;"></td>
             <td class="sig2" style="width: 24%;">
-                @if(!empty($salesSignature) && is_file($salesSignature))
-                    <div style="margin-bottom: -6pt;"><img src="{{ $salesSignature }}" style="height: 34pt;"></div>
-                @endif
+                {{-- ฟอร์มนี้ไม่พิมพ์รูปลายเซ็น (เซ็นสดบนกระดาษ) --}}
                 <div>(<span class="sig-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>)</div>
                 <div>____/____/____</div>
                 <div class="b">({{ $texts['sign_opener'] ?? 'ผู้เปิดใบงาน' }})</div>
@@ -104,4 +102,5 @@
     </table>
 </div>
 
-@include('pdf.forms.partials._footer')
+</body>
+</html>
