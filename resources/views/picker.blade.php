@@ -4,51 +4,100 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>เลือกแบบฟอร์ม {{ $quote->number() }}</title>
+<title>พิมพ์ใบเสนอราคา {{ $quote->number() }}</title>
 <style>
-    :root { --bg: #f4f5f7; --card: #fff; --line: #d9dce1; --text: #1f2328; --muted: #6b7280; --accent: #1a4d8f; --accent-soft: #e8eef8; }
+    :root { --bg: #eef0f3; --panel: #fff; --line: #d9dce1; --text: #1f2328; --muted: #6b7280; --accent: #1a4d8f; }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: "Segoe UI", "Sarabun", Tahoma, sans-serif; background: var(--bg); color: var(--text); }
-    .wrap { max-width: 640px; margin: 0 auto; padding: 24px 16px 48px; }
-    h1 { font-size: 20px; margin: 0 0 4px; }
-    .meta { color: var(--muted); font-size: 14px; margin-bottom: 20px; }
-    .meta b { color: var(--text); }
-    .form { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-    .form.suggested { border-color: var(--accent); background: var(--accent-soft); }
-    .form .info { flex: 1 1 240px; }
-    .form .slug { font-weight: 700; font-size: 16px; }
-    .form .label { color: var(--muted); font-size: 14px; }
-    .form .tag { display: inline-block; font-size: 12px; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: middle; }
-    .actions { display: flex; gap: 8px; }
-    a.btn { text-decoration: none; padding: 8px 14px; border-radius: 8px; font-size: 14px; border: 1px solid var(--accent); color: var(--accent); background: #fff; white-space: nowrap; }
+    html, body { height: 100%; margin: 0; }
+    body { font-family: "Segoe UI", "Sarabun", Tahoma, sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; }
+    header { background: var(--panel); border-bottom: 1px solid var(--line); padding: 10px 16px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    header .title { font-weight: 700; font-size: 16px; }
+    header .meta { color: var(--muted); font-size: 13px; }
+    header .meta b { color: var(--text); }
+    main { flex: 1; display: flex; min-height: 0; }
+    aside { width: 300px; flex: 0 0 300px; background: var(--panel); border-right: 1px solid var(--line); padding: 16px; overflow: auto; }
+    aside label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    select { width: 100%; font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--accent); border-radius: 6px; background: #fff; }
+    .desc { font-size: 13px; color: var(--muted); margin: 8px 0 16px; min-height: 18px; }
+    .actions { display: flex; flex-direction: column; gap: 8px; }
+    a.btn { text-decoration: none; text-align: center; padding: 9px 14px; border-radius: 6px; font-size: 14px; border: 1px solid var(--accent); color: var(--accent); background: #fff; }
     a.btn.primary { background: var(--accent); color: #fff; }
     a.btn:hover { filter: brightness(0.95); }
-    .hint { color: var(--muted); font-size: 13px; margin-top: 20px; }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 20px; line-height: 1.5; }
+    .tag { display: inline-block; font-size: 11px; color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 0 7px; margin-left: 4px; vertical-align: middle; }
+    section.preview { flex: 1; padding: 12px; min-width: 0; }
+    iframe { width: 100%; height: 100%; border: 1px solid var(--line); background: #fff; }
+    .loading { position: absolute; margin: 12px; color: var(--muted); font-size: 13px; }
+    @media (max-width: 760px) {
+        main { flex-direction: column; }
+        aside { width: auto; flex: none; border-right: 0; border-bottom: 1px solid var(--line); }
+        section.preview { height: 70vh; }
+    }
 </style>
 </head>
 <body>
-<div class="wrap">
-    <h1>เลือกแบบฟอร์ม PDF</h1>
-    <div class="meta">
-        ใบเสนอราคา <b>{{ $quote->number() }}</b>
+<header>
+    <span class="title">พิมพ์ใบเสนอราคา</span>
+    <span class="meta">
+        เลขที่ <b>{{ $quote->number() }}</b>
         @if($quote->customerName()) · {{ $quote->customerName() }}@endif
         @if($quote->isoCode()) · รหัสฟอร์มใน CRM <b>{{ $quote->isoCode() }}</b>@endif
-    </div>
+    </span>
+</header>
+<main>
+    <aside>
+        <label for="form">เลือกแบบฟอร์ม (Mail Merge Template)</label>
+        <select id="form">
+            @foreach($forms as $form)
+                <option value="{{ $form->slug }}"
+                        data-label="{{ $form->label() }}"
+                        data-view="{{ $urlFor($form) }}"
+                        data-download="{{ $urlFor($form, true) }}"
+                        @selected($form->slug === $suggested->slug)>
+                    {{ $form->slug }}@if($form->slug === $suggested->slug) (แนะนำ)@endif
+                </option>
+            @endforeach
+        </select>
+        <div class="desc" id="desc"></div>
 
-    @foreach($forms as $form)
-        <div class="form {{ $form->slug === $suggested->slug ? 'suggested' : '' }}">
-            <div class="info">
-                <div class="slug">{{ $form->slug }}@if($form->slug === $suggested->slug)<span class="tag">แนะนำ</span>@endif</div>
-                <div class="label">{{ $form->label() }}</div>
-            </div>
-            <div class="actions">
-                <a class="btn primary" href="{{ $urlFor($form) }}" target="_blank" rel="noopener">เปิด PDF</a>
-                <a class="btn" href="{{ $urlFor($form, true) }}">ดาวน์โหลด</a>
-            </div>
+        <div class="actions">
+            <a class="btn primary" id="open" href="#" target="_blank" rel="noopener">เปิด PDF ในแท็บใหม่</a>
+            <a class="btn" id="download" href="#">ดาวน์โหลด PDF</a>
         </div>
-    @endforeach
 
-    <p class="hint">ฟอร์มที่ "แนะนำ" เลือกจากค่าในฟิลด์ {{ config('quote.auto_form.field', 'ISO') }} ของ Quote ตามตารางใน config/quote.php</p>
-</div>
+        <p class="hint">
+            ตัวอย่างด้านขวาเป็น PDF จริงจากข้อมูลล่าสุดใน CRM<br>
+            ฟอร์มที่ "แนะนำ" เลือกจากฟิลด์ {{ config('quote.auto_form.field', 'ISO') }} ของ Quote
+        </p>
+    </aside>
+    <section class="preview">
+        <span class="loading" id="loading">กำลังสร้าง PDF…</span>
+        <iframe id="preview" title="PDF preview"></iframe>
+    </section>
+</main>
+<script>
+    (function () {
+        var sel = document.getElementById('form');
+        var frame = document.getElementById('preview');
+        var open = document.getElementById('open');
+        var dl = document.getElementById('download');
+        var desc = document.getElementById('desc');
+        var loading = document.getElementById('loading');
+
+        function apply() {
+            var opt = sel.options[sel.selectedIndex];
+            desc.textContent = opt.getAttribute('data-label') || '';
+            open.href = opt.getAttribute('data-view');
+            dl.href = opt.getAttribute('data-download');
+            loading.style.display = '';
+            // #toolbar=1 ให้ viewer ของเบราว์เซอร์แสดงปุ่มพิมพ์/บันทึก
+            frame.src = opt.getAttribute('data-view') + '#toolbar=1&view=FitH';
+        }
+
+        frame.addEventListener('load', function () { loading.style.display = 'none'; });
+        sel.addEventListener('change', apply);
+        apply();
+    })();
+</script>
 </body>
 </html>
