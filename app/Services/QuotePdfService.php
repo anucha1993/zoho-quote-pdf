@@ -104,9 +104,54 @@ class QuotePdfService
         $mpdf->SetAuthor(config('quote.company.name_th', ''));
         $mpdf->SetSubject(RichText::plain($quote->serviceSubject()));
 
-        $mpdf->WriteHTML($html);
+        $doc = array_merge(config('quote.document'), $form->option('document', []));
+
+        // template แบ่ง 2 ส่วนด้วย marker: เนื้อหา | ส่วนปิดท้าย (ข้อความ + กล่องลงนาม) ที่ต้องตรึงล่างสุด
+        [$body, $closing] = array_pad(explode('<!--CLOSING-->', $html, 2), 2, null);
+
+        $mpdf->WriteHTML($body);
+
+        if ($closing !== null && trim($closing) !== '') {
+            // วัดพื้นที่ที่เหลือจริงบนหน้าปัจจุบัน (mm) ถ้าไม่พอสำหรับส่วนปิดท้าย → ขึ้นหน้าใหม่ก่อน
+            $remaining = $mpdf->h - $mpdf->bMargin - $mpdf->y;
+            $needed = (float) ($doc['closing_height_mm'] ?? 70);
+
+            if ($remaining < $needed) {
+                $mpdf->AddPage();
+            }
+
+            // ส่วนปิดท้ายใช้ position:absolute (bottom) จึงไปเกาะล่างสุดของหน้าปัจจุบัน
+            $mpdf->WriteHTML($closing);
+        }
+
+        // วาดกรอบรอบพื้นที่เนื้อหาให้ครบทุกหน้า (เหนือ footer)
+        if (! empty($doc['frame'])) {
+            $this->drawFrames($mpdf);
+        }
 
         return $mpdf->Output('', Destination::STRING_RETURN);
+    }
+
+    /**
+     * วาดกรอบสี่เหลี่ยมรอบเนื้อหาในทุกหน้า: จากขอบบนถึงเหนือ footer เล็กน้อย
+     */
+    protected function drawFrames(Mpdf $mpdf): void
+    {
+        $lastPage = $mpdf->page;
+        $x = $mpdf->lMargin;
+        $y = $mpdf->tMargin;
+        $w = $mpdf->w - $mpdf->lMargin - $mpdf->rMargin;
+        $h = $mpdf->h - $mpdf->tMargin - $mpdf->bMargin - 1.5;
+
+        $mpdf->SetDrawColor(0);
+        $mpdf->SetLineWidth(0.18); // ≈ 0.5pt
+
+        for ($p = 1; $p <= $lastPage; $p++) {
+            $mpdf->page = $p;
+            $mpdf->Rect($x, $y, $w, $h);
+        }
+
+        $mpdf->page = $lastPage;
     }
 
     /**

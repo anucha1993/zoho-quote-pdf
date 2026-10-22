@@ -82,26 +82,14 @@
 <body>
 
 @php
-    // ความสูงกรอบ = กระดาษ A4 − ขอบบน − พื้นที่ footer − ช่องว่างเล็กน้อย (หน่วย mm)
-    $frameHeight = 297 - ($doc['margin_top_mm'] ?? 4.5) - ($doc['margin_bottom_mm'] ?? 30) - 1.5;
-    // ตรึงส่วนปิดท้ายไว้ล่างสุดเมื่อประเมินแล้วเนื้อหาไม่ล้นไปทับ (ประมาณความสูงเป็น pt)
-    //   แถวรายการ ≈ 26pt (+13pt ถ้ามีรายละเอียด), เงื่อนไข ≈ 15pt ต่อบรรทัด (ประมาณจากความยาวข้อความและจำนวน tag ขึ้นบรรทัด)
     $termsHtml = RichText::block($q->paymentTerms());
-    $termsPlain = RichText::plain($q->paymentTerms());
-    //   ประมาณบรรทัดของเงื่อนไข: แยกเป็นส่วนตาม <br>/<li>/</p> แล้วนับบรรทัดต่อส่วน (ตัดบรรทัดทุก ~125 ตัวอักษร)
-    $termsLines = 0;
-    foreach (preg_split('/<br\s*\/?>|<li>|<\/p>|<\/div>/i', $termsHtml) ?: [] as $segment) {
-        $len = mb_strlen(trim(strip_tags($segment)));
-        if ($len > 0) {
-            $termsLines += max(1, (int) ceil($len / 125));
-        }
-    }
-    $termsHeight = $termsLines * 14.6;
-    $itemsHeight = max(count($items), $minRows) * 26 + count(array_filter($items, fn ($i) => $i['description'] !== '')) * 13;
-    // งบความสูง (pt) ระหว่างแถวแรกของตารางถึงขอบบนของส่วนปิดท้ายที่ตรึงไว้ — วัดจากเอกสารจริง (A4, margin ปัจจุบัน)
-    $pinBottom = ($itemsHeight + $termsHeight) <= 305;
 @endphp
-<div class="frame" @if($pinBottom) style="height: {{ $frameHeight }}mm;" @endif>
+{{--
+    โครงสร้างหน้า: เนื้อหา (หัวกระดาษ → เงื่อนไข) ไหลตามปกติ ข้ามหน้าได้
+    ส่วนปิดท้าย (หลัง marker CLOSING) ถูก QuotePdfService วางตรึงไว้ล่างสุดของหน้าสุดท้าย
+    โดยวัดพื้นที่ที่เหลือจริง ถ้าไม่พอจะขึ้นหน้าใหม่ให้ก่อน และกรอบนอกถูกวาดให้ทุกหน้า
+--}}
+<div class="content">
 
     {{-- ============ แถว 1-2 : หัวกระดาษ (Picture 4 ที่ A1:K2) ============ --}}
     {{-- เว้นระยะรอบหัวกระดาษ: ขอบบน 6pt, ซ้าย 2%, ล่าง 8pt ก่อนตารางลูกค้า --}}
@@ -173,8 +161,9 @@
         </tr>
     </table>
 
-    {{-- ============ แถว 9-14 : ตารางรายการ ============ --}}
+    {{-- ============ แถว 9-14 : ตารางรายการ (thead ซ้ำทุกหน้าเมื่อรายการยาวข้ามหน้า) ============ --}}
     <table>
+        <thead>
         <tr style="height: 38pt;">
             <td class="nopad" style="width: {{ $wA }}%;"></td>
             <td class="bd b c f15 fill-grey" style="width: {{ $wB }}%;">ลำดับที่<br>ITEM</td>
@@ -184,7 +173,8 @@
             <td class="bd b c f15 fill-grey" style="width: {{ $wK }}%;">จำนวนเงิน<br>Amount</td>
             <td class="nopad" style="width: {{ $wL }}%;"></td>
         </tr>
-
+        </thead>
+        <tbody>
         @foreach($items as $item)
             <tr style="height: 25.4pt;">
                 <td class="nopad"></td>
@@ -223,6 +213,7 @@
             <td class="bd bb-thick r bi f22 fill-grey">{{ F::money($q->grandTotal(), false) }}</td>
             <td class="nopad"></td>
         </tr>
+        </tbody>
     </table>
 
     {{-- ============ แถว 15 : เว้น ============ --}}
@@ -235,10 +226,9 @@
         </tr>
     </table>
 
-@if($pinBottom)
 </div>
+<!--CLOSING-->
 <div class="closing-pinned">
-@endif
 
     {{-- ============ แถว 17-20 : ข้อความปิดท้าย (กึ่งกลาง ตัวหนา เว้นระยะจากเงื่อนไขด้านบน) ============ --}}
     <table style="margin-top: 10pt;">

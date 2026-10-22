@@ -301,6 +301,29 @@ class QuotePdfTest extends TestCase
             ->assertSee('/FA-SA-TH/'.self::QUOTE_ID);
     }
 
+    public function test_long_quote_spans_pages_and_closing_block_is_on_last_page(): void
+    {
+        $quote = $this->sampleQuote();
+        $quote['Quoted_Items'] = array_map(fn ($i) => [
+            'Sequence_Number' => (string) $i,
+            'Product_Name' => ['name' => "รายการที่ {$i}", 'Product_Code' => "P{$i}"],
+            'Description' => 'รายละเอียดบรรทัดที่สอง',
+            'Quantity' => 1, 'List_Price' => 100, 'Total' => 100, 'Net_Total' => 100,
+        ], range(1, 25));
+
+        Http::fake([
+            'accounts.zoho.com/*' => Http::response(['access_token' => 'tok'], 200),
+            'www.zohoapis.com/crm/v8/Quotes/'.self::QUOTE_ID => Http::response(['data' => [$quote]], 200),
+            'www.zohoapis.com/*' => Http::response('', 204),
+        ]);
+
+        $response = $this->get($this->url())->assertOk();
+        $pdf = file_get_contents($response->baseResponse->getFile()->getPathname());
+
+        $pages = preg_match_all('/\/Type\s*\/Page[^s]/', $pdf);
+        $this->assertGreaterThanOrEqual(2, $pages, 'รายการ 25 แถวต้องล้นไปมากกว่า 1 หน้า');
+    }
+
     public function test_short_url_rejects_non_numeric_or_short_ids(): void
     {
         Http::fake();
