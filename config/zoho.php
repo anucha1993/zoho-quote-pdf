@@ -73,10 +73,14 @@ return [
         'modified_time' => 'Modified_Time',
         'created_time' => 'Created_Time',
 
-        // Subform รายการสินค้า — ฟอร์มต้นแบบใช้ subform ชื่อ "QT Thailand"
-        // ถ้าไม่พบจะลองชื่อถัดไปตามลำดับ (Quoted_Items = subform มาตรฐาน v8)
-        'items' => env('ZOHO_ITEMS_SUBFORM', 'QT_Thailand'),
-        'items_fallback' => ['Quoted_Items', 'Product_Details'],
+        // เลขที่เอกสารที่แสดง/ใช้เป็นชื่อไฟล์ — ใน org นี้ Subject = "PRE-MOU2026-0194"
+        // (Quote_Number เป็น autonumber ตัวเลขยาว) ถ้าว่างจะลองตามลำดับใน number_fallback
+        'document_number' => env('ZOHO_FIELD_QUOTE_NUMBER', 'Subject'),
+        'number_fallback' => ['Quotation_Number', 'Quote_Number'],
+
+        // Subform รายการสินค้า — ป้ายชื่อ "QT Thailand" ใน org นี้คือ subform มาตรฐาน Quoted_Items
+        'items' => env('ZOHO_ITEMS_SUBFORM', 'Quoted_Items'),
+        'items_fallback' => ['QT_Thailand', 'Product_Details'],
         'item' => [
             'product' => 'Product_Name',       // lookup => ['id','name','Product_Code']
             'description' => 'Description',    // บางระบบใช้ Product_Description
@@ -96,21 +100,22 @@ return [
         | ป้ายชื่อใน CRM เป็นภาษาไทย Zoho จะตั้ง API name ให้อัตโนมัติ
         | ต้องเปิดดูที่ Setup > Developer Space > APIs > API Names > Quotes แล้วแก้ที่ .env
         */
+        // ค่าเริ่มต้นคือ API name จริงของ org 853559971 (ตรวจจาก settings/fields เมื่อ 2026-10-22)
         'custom' => [
             // ${Quotes.วันที่เสนอราคา}  (ถ้าว่างจะใช้ Created_Time)
-            'quote_date' => env('ZOHO_FIELD_QUOTE_DATE', 'Quote_Date'),
-            // ${Quotes.หัวข้อการให้บริการ}  (ถ้าว่างจะใช้ Subject)
-            'service_subject' => env('ZOHO_FIELD_SERVICE_SUBJECT', 'Service_Subject'),
+            'quote_date' => env('ZOHO_FIELD_QUOTE_DATE', 'field2'),
+            // ${Quotes.หัวข้อการให้บริการ}  (ถ้าว่างจะเว้นว่างตามต้นแบบ)
+            'service_subject' => env('ZOHO_FIELD_SERVICE_SUBJECT', 'field6'),
             // ${Quotes.ชื่อจริง} ${Quotes.นามสกุล}  (ถ้าว่างจะใช้ชื่อ Owner)
-            'sales_first_name' => env('ZOHO_FIELD_SALES_FIRST_NAME', 'Sales_First_Name'),
-            'sales_last_name' => env('ZOHO_FIELD_SALES_LAST_NAME', 'Sales_Last_Name'),
-            // ${Lookup:รหัสพนักงาน.ชื่อเล่น} — lookup ไปยัง module พนักงาน แล้วอ่าน field ชื่อเล่น
-            'employee_lookup' => env('ZOHO_FIELD_EMPLOYEE_LOOKUP', 'Employee_Code'),
-            'employee_module' => env('ZOHO_EMPLOYEE_MODULE', 'Employees'),
+            'sales_first_name' => env('ZOHO_FIELD_SALES_FIRST_NAME', 'First_Name'),
+            'sales_last_name' => env('ZOHO_FIELD_SALES_LAST_NAME', 'Last_Name'),
+            // ${Lookup:รหัสพนักงาน.ชื่อเล่น} — lookup Sales_Code → module Staffs → field Nickname
+            'employee_lookup' => env('ZOHO_FIELD_EMPLOYEE_LOOKUP', 'Sales_Code'),
+            'employee_module' => env('ZOHO_EMPLOYEE_MODULE', 'Staffs'),
             'employee_nickname' => env('ZOHO_FIELD_EMPLOYEE_NICKNAME', 'Nickname'),
             // ${Quotes.เงื่อนไข และรายละเอียการชำระเงิน}  (ถ้าว่างจะใช้ Terms_and_Conditions)
-            'payment_terms' => env('ZOHO_FIELD_PAYMENT_TERMS', 'Payment_Terms'),
-            // ${Quotes.ISO}  รหัสแบบฟอร์ม (ถ้าว่างจะใช้ config quote.form_code)
+            'payment_terms' => env('ZOHO_FIELD_PAYMENT_TERMS', 'field7'),
+            // ${Quotes.ISO}  รหัสแบบฟอร์ม (picklist, ถ้าว่างจะใช้ config quote.form_code)
             'iso' => env('ZOHO_FIELD_ISO', 'ISO'),
         ],
     ],
