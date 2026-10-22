@@ -14,17 +14,18 @@ $cnForm = [
     'view' => 'pdf.forms.fa-sa-cn',
     'document' => [
         'subject_fill' => '#C5E0B4',   // แถบหัวข้อบริการสีเขียวตามต้นแบบ FA-SA-CN.xlsx
-        'closing_height_mm' => 130,    // ส่วนปิดท้าย 2 ภาษา (ทุกบรรทัดมีภาษาจีนเพิ่ม) สูงกว่าฟอร์มไทย
+        'closing_height_mm' => 114,    // ส่วนปิดท้าย 2 ภาษา (ทุกบรรทัดมีภาษาจีนเพิ่ม) สูงกว่าฟอร์มไทย ~28mm
     ],
     // ป้ายในฟอร์ม: บรรทัดไทย + บรรทัดจีน (คำแปลจาก ex/FA-SA-CN.xlsx)
+    // ช่องป้ายซ้ายแคบเท่าคอลัมน์ ลำดับที่ → บรรทัดจีนไม่ใส่ : (เช่น 联系人: จะตกบรรทัด)
     'labels' => [
-        'to' => 'บริษัท&nbsp;:<br>公司:',
+        'to' => 'บริษัท&nbsp;:<br>公司',
         'quote_no' => 'ใบเสนอราคาเลขที่&nbsp;:<br>报价单编号:',
-        'address' => 'ที่อยู่&nbsp;:<br>地址:',
+        'address' => 'ที่อยู่&nbsp;:<br>地址',
         'date' => 'วันที่เสนอราคา&nbsp;:<br>报价日期:',
         'sales' => 'ฝ่ายขายผู้เสนอราคา&nbsp;:<br>报价人:',
-        'contact' => 'ผู้ติดต่อ&nbsp;:<br>联系人:',
-        'contact_phone' => 'เบอร์&nbsp;:<br>电话:',
+        'contact' => 'ผู้ติดต่อ&nbsp;:<br>联系人',
+        'contact_phone' => 'เบอร์&nbsp;:<br>电话',
         'phone' => 'เบอร์โทรศัพท์&nbsp;:<br>联系方式:',
         'col_no' => 'ลำดับที่<br>序号',
         'col_desc' => 'รายการ<br>详细资料',
@@ -238,16 +239,16 @@ return [
         // ขอบล่างเผื่อพื้นที่ท้ายกระดาษ (รูป ISO/LINE/QR ตัดขอบขาวแล้วสูง ~25mm + บรรทัดเลขหน้า/รหัสฟอร์ม ~5mm + margin_footer)
         'margin_bottom_mm' => 34,
         'margin_footer_mm' => 3,
-        // ฟอนต์ใบเสนอราคา: TH Sarabun New 16pt (หัวข้อ 18pt) — ตั้ง QUOTE_FONT=angsananew ได้ถ้าต้องการแบบเดิม
+        // ฟอนต์ใบเสนอราคา: TH Sarabun New 14pt (หัวข้อ 16pt) — ตั้ง QUOTE_FONT=angsananew ได้ถ้าต้องการแบบเดิม
         'font' => env('QUOTE_FONT', 'thsarabunnew'),
-        'font_size_pt' => (float) env('QUOTE_FONT_SIZE', 16),
-        'heading_size_pt' => (float) env('QUOTE_HEADING_SIZE', 18),
+        'font_size_pt' => (float) env('QUOTE_FONT_SIZE', 14),
+        'heading_size_pt' => (float) env('QUOTE_HEADING_SIZE', 16),
         // ฟอนต์อักษรจีน (ฟอร์ม FA-SA-CN): SimSun จาก Windows (resources/fonts/simsun.ttc) — ไม่มีไฟล์ = ใช้ค่าเริ่มต้นของ mPDF
         'cjk_font' => env('QUOTE_CJK_FONT', 'simsun'),
         // สัดส่วนขนาดอักษรจีนเทียบกับข้อความรอบข้าง (SimSun ดูใหญ่กว่า Angsana New) 0.75 = 75%
         'cjk_scale' => (float) env('QUOTE_CJK_SCALE', 0.8),
         // สีพื้นแถบหัวข้อบริการ (FA-SA-TH ชมพู, FA-SA-CN เขียว override ใน forms)
-        'subject_fill' => '#E6B8B7',
+        'subject_fill' => '#C5E0B4',   // แถบหัวข้อการให้บริการ พื้นเขียวอ่อน (เดิมชมพู #E6B8B7)
         'font_size' => 12,
         // จำนวนแถวรายการขั้นต่ำที่แสดงในตาราง (ต้นแบบมี 3 แถว) — ใช้เมื่อเอกสารจบในหน้าเดียว
         'min_item_rows' => (int) env('QUOTE_MIN_ITEM_ROWS', 0),
@@ -259,8 +260,8 @@ return [
         // (ถ้า Quote ไม่มีเงื่อนไข ส่วนลงนามจะอยู่หน้า 1)
         'terms_on_new_page' => (bool) env('QUOTE_TERMS_ON_NEW_PAGE', true),
         // ความสูงของส่วนปิดท้าย (ข้อความ + การยืนยัน + กล่องลงนาม) หน่วย mm — ใช้ตัดสินว่าจะขึ้นหน้าใหม่ก่อนวางหรือไม่
-        // ความสูงส่วนปิดท้าย (ข้อความ 4 บรรทัด + การยืนยัน + กล่องลงนาม 96pt) ที่ 16pt ≈ 95mm → ถ้าที่เหลือน้อยกว่านี้ขึ้นหน้าใหม่
-        'closing_height_mm' => 98,
+        // ความสูงส่วนปิดท้าย (ข้อความ 4 บรรทัด + การยืนยัน + กล่องลงนาม 96pt) ที่ 14pt ≈ 84mm → ถ้าที่เหลือน้อยกว่านี้ขึ้นหน้าใหม่
+        'closing_height_mm' => 86,
         // pin = ตรึงล่างสุดเสมอ (ขึ้นหน้าใหม่ถ้าที่ไม่พอ), pin-or-top = ที่พอตรึงล่างสุด / ไม่พอขึ้นหน้าใหม่แล้ววางจากด้านบน,
         // pin-or-flow = ที่พอตรึงล่างสุด / ไม่พอวางต่อท้ายเนื้อหาทันที (ใช้กับใบงาน TRACKING)
         'closing_mode' => env('QUOTE_CLOSING_MODE', 'pin-or-top'),

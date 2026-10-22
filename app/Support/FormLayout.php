@@ -44,9 +44,11 @@ class FormLayout
         $trim = (bool) ($company['trim_image_sides'] ?? true);
         // ตารางข้อมูลหัวฟอร์ม 4 แถว: ป้ายซ้าย | ค่าซ้าย | ป้ายขวา | ค่าขวา (รวม = 100 − wA − wL)
         // ป้ายกว้างพอให้ "ฝ่ายขายผู้เสนอราคา :" / "ใบเสนอราคาเลขที่ :" ตัวหนา 16pt อยู่บรรทัดเดียว
-        $iLabelL = 12.5;
-        $iLabelR = 20.5;
-        $iValR = 26.0;
+        // เส้นแบ่งตรงกับตารางรายการ: ป้ายซ้าย = คอลัมน์ ลำดับที่ (wB), ป้ายขวา = คอลัมน์ ราคา (tI),
+        // ค่าขวา = คอลัมน์ จำนวน + จำนวนเงิน (tJ + tK) — ป้ายขวาใช้ 14pt (td.lr) ให้ "ฝ่ายขายผู้เสนอราคา :" อยู่บรรทัดเดียวใน 31mm
+        $iLabelL = $wB;
+        $iLabelR = $tI;
+        $iValR = round($tJ + $tK, 2);
         $iValL = round(100 - $wA - $wL - $iLabelL - $iLabelR - $iValR, 2);
 
         $headerImg = $company['header_image'] ?? null;
