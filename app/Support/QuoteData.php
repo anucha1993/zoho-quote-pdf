@@ -75,6 +75,23 @@ class QuoteData
         return (string) ($this->quote[$this->f['quote_stage']] ?? '');
     }
 
+    /**
+     * Quote อยู่ในสถานะอนุมัติแล้วหรือไม่ (เทียบกับ config quote.approved_stages ไม่สนตัวพิมพ์)
+     * ใช้ตัดสินว่าจะพิมพ์วันที่ลงเอกสารหรือไม่
+     */
+    public function isApproved(): bool
+    {
+        $stage = mb_strtolower(trim($this->stage()));
+
+        foreach ((array) config('quote.approved_stages', []) as $approved) {
+            if ($stage !== '' && $stage === mb_strtolower(trim((string) $approved))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function createdAt(): ?Carbon
     {
         return $this->date($this->quote[$this->f['created_time']] ?? null);

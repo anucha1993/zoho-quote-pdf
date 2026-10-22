@@ -49,6 +49,10 @@ return [
     // รหัสแบบฟอร์ม (ใช้เมื่อ Quote ไม่มีค่าใน field ISO)
     'form_code' => env('QUOTE_FORM_CODE', 'FA-SA-02-103'),
 
+    // Quote Stage ที่ถือว่า "อนุมัติ" — แสดงวันที่ในเอกสารเฉพาะสถานะเหล่านี้
+    // (Zoho ส่งค่า display "อนุมัติ"; actual value ใน CRM คือ "Confirmed" ใส่ไว้ทั้งคู่กันพลาด)
+    'approved_stages' => array_values(array_filter(array_map('trim', explode(',', env('QUOTE_APPROVED_STAGES', 'อนุมัติ,Confirmed'))))),
+
     // แสดง QR Code ของลิงก์เอกสารหรือไม่ (ฟอร์มต้นแบบไม่มี จึงปิดเป็นค่าเริ่มต้น)
     'show_qr' => (bool) env('QUOTE_SHOW_QR', false),
 
@@ -94,7 +98,9 @@ return [
         'margin_left_mm' => 6,
         'margin_right_mm' => 4,
         'margin_top_mm' => 4.5,
-        'margin_bottom_mm' => 6,
+        // ขอบล่างเผื่อพื้นที่ท้ายกระดาษ (รูป ISO/LINE/QR + รหัสฟอร์ม) ซึ่งตรึงไว้ล่างสุดของทุกหน้า
+        'margin_bottom_mm' => 32,
+        'margin_footer_mm' => 3,
         // ฟอนต์ตามต้นแบบ: Angsana New (มี fallback เป็น TH Sarabun New ถ้าไม่มีไฟล์)
         'font' => env('QUOTE_FONT', 'angsananew'),
         'font_size' => 12,

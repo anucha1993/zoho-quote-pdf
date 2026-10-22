@@ -107,7 +107,8 @@
                 {{ $q->billingLine2() }}
             </td>
             <td class="bd b l">วันที่ :</td>
-            <td class="bd b c">{{ F::thaiDate($q->quoteDate()) }}</td>
+            {{-- วันที่ dd/mm/yyyy แสดงเฉพาะเมื่อ Quote Stage = อนุมัติ --}}
+            <td class="bd b c">{{ $q->isApproved() ? F::dateFormat($q->quoteDate()) : '' }}&nbsp;</td>
             <td class="nopad"></td>
         </tr>
         <tr style="height: 24.4pt;">
@@ -260,24 +261,26 @@
 </tr>
 </table>
 
-{{-- ============ แถว 25-27 : ท้ายกระดาษ (รูปภาพ 3) ============ --}}
-<table style="margin-top: 8pt;">
-    <tr>
-        <td class="nopad c">
-            @if($hasFooter)
-                <img src="{{ $footerImg }}" style="width: 194mm;">
-            @endif
-        </td>
-    </tr>
-</table>
-
-{{-- ============ แถว 28 : รหัสแบบฟอร์ม ${Quotes.ISO} ============ --}}
-<table>
-    <tr>
-        <td class="r f18" style="width: {{ 100 - $wL }}%; padding-top: 2pt;">{{ $q->isoCode() }}</td>
-        <td class="nopad" style="width: {{ $wL }}%;"></td>
-    </tr>
-</table>
+{{-- ============ แถว 25-28 : ท้ายกระดาษ (รูปภาพ 3) + รหัสแบบฟอร์ม ${Quotes.ISO}
+     ตรึงไว้ล่างสุดของทุกหน้าด้วย htmlpagefooter (พื้นที่จองโดย margin_bottom ใน QuotePdfService) ============ --}}
+<htmlpagefooter name="formFooter">
+    <table>
+        <tr>
+            <td class="nopad c">
+                @if($hasFooter)
+                    <img src="{{ $footerImg }}" style="width: 194mm;">
+                @endif
+            </td>
+        </tr>
+    </table>
+    <table>
+        <tr>
+            <td class="r f18" style="width: {{ 100 - $wL }}%; padding-top: 2pt;">{{ $q->isoCode() }}</td>
+            <td class="nopad" style="width: {{ $wL }}%;"></td>
+        </tr>
+    </table>
+</htmlpagefooter>
+<sethtmlpagefooter name="formFooter" value="on" />
 
 @if($trackingUrl)
     <div style="position: absolute; right: 6mm; bottom: 4mm;">
