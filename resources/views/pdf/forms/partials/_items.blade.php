@@ -8,12 +8,14 @@
      * @var string|null $sectionTitle แถบชื่อส่วนเหนือตาราง (เช่น "QT Destination") ไม่ใส่ = ไม่แสดง
      * @var bool  $showNameCn  แสดง Product Name (CN) ใต้ชื่อสินค้า (ฟอร์ม FA-SA-CN)
      * @var float|null $rowTotal ยอดแถว "ยอดรวม" ท้ายตาราง = ยอดเฉพาะตารางนี้ (ไม่ใส่ = ใช้ $totals['amount'])
+     * @var bool  $showTotals  แสดงกล่องสรุปยอด (รวมเป็นเงิน/ภาษี/รวมทั้งสิ้น) ใต้ตาราง — หน้า QT Destination ไม่แสดง
      */
     use App\Support\QuoteData as F;
     $fillMarkers = $fillMarkers ?? false;
     $sectionTitle = $sectionTitle ?? null;
     $showNameCn = $showNameCn ?? false;
     $rowTotal = $rowTotal ?? $totals['amount'];
+    $showTotals = $showTotals ?? true;
 @endphp
 
 @if($sectionTitle)
@@ -98,6 +100,7 @@
     <!--/BLANKROWS-->
 @endif
 
+@if($showTotals)
 {{-- กล่องสรุปยอด (ขวา): 2 คอลัมน์ขวาตรงกับคอลัมน์ จำนวน/จำนวนเงิน ของตาราง, คอลัมน์ป้ายไทยกว้างกว่าคอลัมน์ ราคา เล็กน้อย --}}
 <table style="margin-top: 6pt;">
     <tr>
@@ -133,3 +136,4 @@
         <td class="nopad" style="width: {{ $wL }}%;"></td>
     </tr>
 </table>
+@endif

@@ -25,6 +25,7 @@
     @include('pdf.forms.partials._items', [
         'rows' => $q->destinationItems(),
         'totals' => $q->destinationTotals(),
+        'showTotals' => false,   // หน้า Destination มีแค่แถว "ยอดรวม" ท้ายตาราง กล่องสรุปยอดทั้งใบอยู่หลังตาราง QT Thailand
         'fillMarkers' => true,
         'sectionTitle' => $texts['destination_title'] ?? 'QT Destination',
     ])
