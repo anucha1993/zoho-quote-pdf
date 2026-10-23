@@ -105,8 +105,8 @@ return [
             'view' => 'pdf.forms.fa-sa-thde',
             'texts' => [
                 // แถบชื่อส่วนเหนือตาราง: หน้า 1 = QT Destination, หน้า 2 = QT Thailand
-                'destination_title' => env('QUOTE_DESTINATION_TITLE', 'รายการค่าบริการปลายทาง (QT Destination)'),
-                'thailand_title' => env('QUOTE_THAILAND_TITLE', 'รายการค่าบริการในประเทศ (QT Thailand)'),
+                'destination_title' => env('QUOTE_DESTINATION_TITLE', 'เงินสำรองจ่าย ค่าใช้จ่ายในการดำเนินงานของเอเจนซี่ประเทศต้นทาง (ประเทศเมียนมา)'),
+                'thailand_title' => env('QUOTE_THAILAND_TITLE', 'ค่าใช้จ่ายในการดำเนินการฝั่งประเทศไทย'),
             ],
         ],
         // ---- ฟอร์มของ module Deals (ใบงาน) — URL: /TRACKING/{deal id} ----
@@ -136,8 +136,8 @@ return [
             'label' => 'ใบเสนอราคา ไทย-จีน + หน้า QT Destination',
             'view' => 'pdf.forms.fa-sa-cnde',
             'texts' => [
-                'destination_title' => 'รายการค่าบริการปลายทาง (QT Destination) 目的地服务费用',
-                'thailand_title' => 'รายการค่าบริการในประเทศ (QT Thailand) 泰国境内服务费用',
+                'destination_title' => 'เงินสำรองจ่าย ค่าใช้จ่ายในการดำเนินงานของเอเจนซี่ประเทศต้นทาง (ประเทศเมียนมา)<br>来源国(缅甸)中介机构运营费用预付款',
+                'thailand_title' => 'ค่าใช้จ่ายในการดำเนินการฝั่งประเทศไทย<br>泰国方面办理费用',
             ],
         ]),
     ],

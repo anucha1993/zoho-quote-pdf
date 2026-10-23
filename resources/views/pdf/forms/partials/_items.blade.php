@@ -22,7 +22,7 @@
     <table style="margin-top: 6pt;">
         <tr>
             <td class="nopad" style="width: {{ $wA }}%;"></td>
-            <td class="bd section-title f18" style="width: {{ 100 - $wA - $wL }}%;">{{ $sectionTitle }}</td>
+            <td class="bd section-title f18" style="width: {{ 100 - $wA - $wL }}%;">{!! $sectionTitle !!}</td>
             <td class="nopad" style="width: {{ $wL }}%;"></td>
         </tr>
     </table>
