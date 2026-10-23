@@ -13,7 +13,7 @@ $cnForm = [
     'label' => 'ใบเสนอราคา ไทย-จีน (FA-SA-CN)',
     'view' => 'pdf.forms.fa-sa-cn',
     'document' => [
-        'subject_fill' => '#C5E0B4',   // แถบหัวข้อบริการสีเขียวตามต้นแบบ FA-SA-CN.xlsx
+        // สีแถบหัวข้อใช้ค่าเดียวกับฟอร์มไทย (document.subject_fill)
         'closing_height_mm' => 114,    // ส่วนปิดท้าย 2 ภาษา (ทุกบรรทัดมีภาษาจีนเพิ่ม) สูงกว่าฟอร์มไทย ~28mm
     ],
     // ป้ายในฟอร์ม: บรรทัดไทย + บรรทัดจีน (คำแปลจาก ex/FA-SA-CN.xlsx)
@@ -180,6 +180,8 @@ return [
         // รูปลายเซ็นผู้อนุมัติ (PNG พื้นโปร่ง) — ตั้งเป็นค่าว่างถ้าไม่ต้องการพิมพ์ลายเซ็น
         'signature' => env('QUOTE_APPROVER_SIGNATURE', resource_path('images/signature-approver.png')),
         'signature_height_pt' => (int) env('QUOTE_APPROVER_SIGNATURE_HEIGHT', 34),
+        // ระยะจากขอบบนกล่องลงนามถึงขอบบนรูป (mm) — รูปสูง 34pt ≈ 12mm, เส้นลงนามอยู่ ~15.5mm จากขอบบน → 3.0 ทำให้ขอบล่างรูปอยู่เหนือเส้น ~0.5mm
+        'signature_top_mm' => (float) env('QUOTE_SIGNATURE_TOP_MM', 3.0),
     ],
 
     /*
@@ -248,7 +250,8 @@ return [
         // สัดส่วนขนาดอักษรจีนเทียบกับข้อความรอบข้าง (SimSun ดูใหญ่กว่า Angsana New) 0.75 = 75%
         'cjk_scale' => (float) env('QUOTE_CJK_SCALE', 0.8),
         // สีพื้นแถบหัวข้อบริการ (FA-SA-TH ชมพู, FA-SA-CN เขียว override ใน forms)
-        'subject_fill' => '#C5E0B4',   // แถบหัวข้อการให้บริการ พื้นเขียวอ่อน (เดิมชมพู #E6B8B7)
+        // แถบหัวข้อการให้บริการ: พื้นเขียว #7CD052 (อ่อนกว่า #56C222 ที่กำหนดเล็กน้อย) (เปลี่ยนได้ที่ QUOTE_SUBJECT_FILL เช่น #CDF065 เขียวมะนาว, #E6B8B7 ชมพู)
+        'subject_fill' => env('QUOTE_SUBJECT_FILL', '#7CD052'),
         'font_size' => 12,
         // จำนวนแถวรายการขั้นต่ำที่แสดงในตาราง (ต้นแบบมี 3 แถว) — ใช้เมื่อเอกสารจบในหน้าเดียว
         'min_item_rows' => (int) env('QUOTE_MIN_ITEM_ROWS', 0),

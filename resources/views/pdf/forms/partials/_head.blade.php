@@ -79,9 +79,9 @@
     table.info td.lr { font-size: {{ min($fs, 14) }}pt; padding: 3pt 1pt; }
 
     /* กล่องสรุปยอดท้ายตาราง: ไทย | อังกฤษ | จำนวนเงิน — ความกว้างคอลัมน์ = คอลัมน์ ราคา/จำนวน/จำนวนเงิน ของตาราง */
-    table.totals td { height: 22pt; padding: 0 4pt; font-size: {{ $fs }}pt; white-space: nowrap; }
+    table.totals td { height: 22pt; padding: 0 3pt; font-size: {{ $fs }}pt; white-space: nowrap; }
     table.totals td.t1 { width: {{ $tT1 }}%; white-space: nowrap; }
-    table.totals td.t2 { width: {{ $tT2 }}%; padding: 0 2pt; }
+    table.totals td.t2 { width: {{ $tT2 }}%; padding: 0 1pt; }
     table.totals td.t3 { width: {{ $tT3 }}%; }
 
     /* แถบชื่อส่วน (เช่น QT Destination) เหนือตารางรายการชุดที่ 2 */

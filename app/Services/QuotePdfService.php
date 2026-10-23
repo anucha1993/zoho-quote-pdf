@@ -403,6 +403,11 @@ class QuotePdfService
             config('quote.approver.signature'),
         ];
 
+        // partials ที่ทุกฟอร์มใช้ร่วมกัน (_head/_info/_items/_closing ฯลฯ) — แก้ไฟล์ไหนก็ต้องสร้าง PDF ใหม่
+        foreach (glob(resource_path('views/pdf/forms/partials/*.blade.php')) ?: [] as $partial) {
+            $files[] = $partial;
+        }
+
         foreach ($files as $file) {
             if ($file && is_file($file)) {
                 $parts[] = $file.'|'.filemtime($file).'|'.filesize($file);

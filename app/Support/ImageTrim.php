@@ -84,6 +84,59 @@ class ImageTrim
     }
 
     /**
+     * ย่อ/ขยายรูป (PNG โปร่งใส) ให้สูง $heightPt เมื่อวาดที่ $dpi — ใช้กับรูปลายเซ็นที่วาดเป็น background ของช่องตาราง
+     * (mPDF ไม่ใช้ background-size กับ td แต่วาดตามขนาดพิกเซลจริง ÷ img_dpi) ผลลัพธ์ cache ที่ storage/app/images/
+     *
+     * @return string path ของรูปที่ปรับขนาดแล้ว หรือ path เดิมถ้าทำไม่ได้
+     */
+    public static function scaledToHeight(string $path, float $heightPt, int $dpi = 300): string
+    {
+        if (! is_file($path) || ! function_exists('imagecreatefromstring')) {
+            return $path;
+        }
+
+        $targetH = max(1, (int) round($heightPt / 72 * $dpi));
+        $dir = storage_path('app/images');
+        $key = substr(sha1($path.'|'.filemtime($path).'|'.filesize($path).'|'.$targetH), 0, 10);
+        $out = $dir.'/'.pathinfo($path, PATHINFO_FILENAME)."-h{$targetH}-{$key}.png";
+
+        if (is_file($out)) {
+            return $out;
+        }
+
+        try {
+            $src = @imagecreatefromstring((string) file_get_contents($path));
+            if ($src === false) {
+                return $path;
+            }
+
+            $w = imagesx($src);
+            $h = imagesy($src);
+            $targetW = max(1, (int) round($w * $targetH / $h));
+
+            $dst = imagecreatetruecolor($targetW, $targetH);
+            imagealphablending($dst, false);
+            imagesavealpha($dst, true);
+            $transparent = imagecolorallocatealpha($dst, 0, 0, 0, 127);
+            imagefill($dst, 0, 0, $transparent);
+            imagecopyresampled($dst, $src, 0, 0, 0, 0, $targetW, $targetH, $w, $h);
+
+            if (! is_dir($dir)) {
+                mkdir($dir, 0775, true);
+            }
+            imagepng($dst, $out, 6);
+            imagedestroy($src);
+            imagedestroy($dst);
+
+            return is_file($out) ? $out : $path;
+        } catch (\Throwable $e) {
+            Log::warning('ImageTrim scale failed: '.$e->getMessage(), ['path' => $path]);
+
+            return $path;
+        }
+    }
+
+    /**
      * หาคอลัมน์แรก/สุดท้ายที่มีพิกเซลไม่ขาว (สุ่มตรวจทุก ๆ 2 แถวเพื่อความเร็ว)
      *
      * @return array{0: int|null, 1: int|null}

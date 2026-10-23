@@ -32,23 +32,35 @@
                 <div class="b">{!! $texts['sign_customer'] !!}</div>
             </td>
             <td class="nopad" style="width: 3.5%;"></td>
-            <td class="sig-box f16" style="width: 31%;">
-                @if(!empty($salesSignature) && is_file($salesSignature))
-                    {{-- ลายเซ็นพนักงานขายจาก Staffs.Image Sign วางเหนือเส้นลงนาม --}}
-                    <div style="margin-bottom: -6pt;"><img src="{{ $salesSignature }}" style="height: {{ $approver['signature_height_pt'] ?? 34 }}pt;"></div>
-                @endif
+            @php
+                /* รูปลายเซ็นวาดเป็น background ของกล่อง (ไม่อยู่ใน flow) → เลื่อนรูปได้อิสระโดยข้อความไม่ขยับ
+                   ตำแหน่ง = ระยะจากขอบบนกล่อง (approver.signature_top_mm) ความสูงรูป = signature_height_pt */
+                $sigStyle = function (string $file) use ($approver, $doc): string {
+                    // mPDF ไม่ใช้ background-size กับช่องตาราง → ย่อรูปให้พิกเซลตรงกับความสูงที่ต้องการที่ img_dpi ก่อน
+                    $scaled = \App\Support\ImageTrim::scaledToHeight(
+                        $file,
+                        (float) ($approver['signature_height_pt'] ?? 34),
+                        (int) ($doc['img_dpi'] ?? 300)
+                    );
+
+                    return sprintf(
+                        'background-image: url(%s); background-repeat: no-repeat; background-position: center %smm;',
+                        str_replace(DIRECTORY_SEPARATOR, '/', $scaled),
+                        $approver['signature_top_mm'] ?? 3
+                    );
+                };
+            @endphp
+            <td class="sig-box f16" style="width: 31%; @if(!empty($salesSignature) && is_file($salesSignature)){{ $sigStyle($salesSignature) }}@endif">
+                {{-- ลายเซ็นพนักงานขายจาก Staffs.Image Sign (background ของกล่อง) เหนือเส้นลงนาม --}}
                 <div>(<span class="sig-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>)</div>
                 {{-- ( ${Quotes.ชื่อจริง} ${Quotes.นามสกุล} ) --}}
                 <div class="b">( {{ $q->salesFullName() ?: '&nbsp;' }} )</div>
                 <div class="b">{!! $texts['sign_sales'] !!}</div>
             </td>
             <td class="nopad" style="width: 3.5%;"></td>
-            <td class="sig-box f16" style="width: 31%;">
-                @php $sigImg = $approver['signature'] ?? null; @endphp
-                @if($sigImg && is_file($sigImg) && $q->isApproved())
-                    {{-- ลายเซ็นผู้อนุมัติ แสดงเฉพาะ Quote สถานะ "อนุมัติ" (quote.approved_stages) เช่นเดียวกับวันที่ --}}
-                    <div style="margin-bottom: -6pt;"><img src="{{ $sigImg }}" style="height: {{ $approver['signature_height_pt'] ?? 34 }}pt;"></div>
-                @endif
+            @php $sigImg = $approver['signature'] ?? null; @endphp
+            {{-- ลายเซ็นผู้อนุมัติ แสดงเฉพาะ Quote สถานะ "อนุมัติ" (quote.approved_stages) เช่นเดียวกับวันที่ --}}
+            <td class="sig-box f16" style="width: 31%; @if($sigImg && is_file($sigImg) && $q->isApproved()){{ $sigStyle($sigImg) }}@endif">
                 <div>(<span class="sig-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>)</div>
                 <div class="b">( {{ $approver['name'] }} )</div>
                 <div class="b">{!! $approver['title'] !!}</div>
