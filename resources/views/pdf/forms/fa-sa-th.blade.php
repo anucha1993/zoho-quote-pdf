@@ -19,7 +19,7 @@
 <div class="content">
     @include('pdf.forms.partials._info')
     @include('pdf.forms.partials._subject')
-    @include('pdf.forms.partials._items', ['rows' => $q->items(), 'totals' => $q->totals(), 'fillMarkers' => true])
+    @include('pdf.forms.partials._items', ['rows' => $q->items(), 'rowTotal' => $q->tableSubtotal(), 'totals' => $q->totals(), 'fillMarkers' => true])
     @include('pdf.forms.partials._terms')
 </div>
 

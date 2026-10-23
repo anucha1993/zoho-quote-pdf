@@ -135,9 +135,10 @@ class QuoteDataTest extends TestCase
         $this->assertSame('IO2026-021617.pdf', $q->filename());
     }
 
-    public function test_totals_box_uses_thailand_only_fields_not_combined_qt_fields(): void
+    public function test_table_subtotal_is_thailand_only_while_totals_box_is_combined(): void
     {
-        // QT_* ใน CRM = ยอดรวมทั้ง 2 ตาราง (Thailand 9,200 + Destination 6,300) → ตาราง Thailand ต้องใช้ Sub_Total/Grand_Total
+        // QT_* ใน CRM = ยอดรวมทั้ง 2 ตาราง (Thailand 9,200 + Destination 6,300)
+        // แถว "ยอดรวม" ท้ายตาราง Thailand = Sub_Total (9,200) ส่วนกล่องสรุปยอด = QT_* (15,500)
         $q = new QuoteData([
             'QT_Total_Amount' => 15500,
             'QT_Total_Tax' => 0,
@@ -153,16 +154,19 @@ class QuoteDataTest extends TestCase
             ],
         ]);
 
-        $this->assertSame(9200.0, $q->totalAmount());
+        $this->assertSame(9200.0, $q->tableSubtotal());
+        $this->assertSame(15500.0, $q->totalAmount());
         $this->assertSame(0.0, $q->totalTax());
-        $this->assertSame(9200.0, $q->grandTotal());
+        $this->assertSame(15500.0, $q->grandTotal());
         $this->assertSame(6300.0, $q->destinationTotals()['amount']);
         $this->assertSame([1, 2], array_column($q->items(), 'no'));
 
-        // ไม่มี field มาตรฐาน → ถอยไปใช้ QT_*
-        $qtOnly = new QuoteData(['QT_Total_Amount' => 500, 'QT_Total_Tax' => 35, 'QT_Grand_Total' => 535]);
-        $this->assertSame(500.0, $qtOnly->totalAmount());
-        $this->assertSame(535.0, $qtOnly->grandTotal());
+        // ไม่มี field QT_* → กล่องสรุปยอดถอยไปใช้ field มาตรฐาน, ไม่มี Sub_Total → ยอดรวมท้ายตารางรวมจากแถว
+        $std = new QuoteData(['Sub_Total' => 500, 'Tax' => 35, 'Grand_Total' => 535]);
+        $this->assertSame(500.0, $std->totalAmount());
+        $this->assertSame(535.0, $std->grandTotal());
+        $rows = new QuoteData(['Quoted_Items' => [['Product_Name' => ['name' => 'A'], 'Quantity' => 2, 'List_Price' => 50, 'Total' => 100]]]);
+        $this->assertSame(100.0, $rows->tableSubtotal());
 
         // ไม่มี field QT_* → ถอยไปใช้ field มาตรฐาน / คำนวณจากรายการ
         $fallback = new QuoteData([

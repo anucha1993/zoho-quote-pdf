@@ -31,7 +31,8 @@
     @include('pdf.forms.partials._info')
     @include('pdf.forms.partials._items', [
         'rows' => $q->items(),
-        'totals' => $q->totals(),
+        'rowTotal' => $q->tableSubtotal(),   // แถว "ยอดรวม" = เฉพาะ QT Thailand
+        'totals' => $q->totals(),            // กล่องสรุปยอด = QT Destination + QT Thailand (field QT_* ของ CRM)
         'fillMarkers' => false,
         'sectionTitle' => $texts['thailand_title'] ?? 'QT Thailand',
     ])

@@ -21,7 +21,7 @@
     @include('pdf.forms.partials._info')
     @include('pdf.forms.partials._subject')
     {{-- ตารางรายการ: แสดง Product Name (CN) ใต้ชื่อไทย --}}
-    @include('pdf.forms.partials._items', ['rows' => $q->items(), 'totals' => $q->totals(), 'fillMarkers' => true, 'showNameCn' => true])
+    @include('pdf.forms.partials._items', ['rows' => $q->items(), 'rowTotal' => $q->tableSubtotal(), 'totals' => $q->totals(), 'fillMarkers' => true, 'showNameCn' => true])
     @include('pdf.forms.partials._terms')
 </div>
 

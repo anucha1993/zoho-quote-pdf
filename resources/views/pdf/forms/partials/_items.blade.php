@@ -7,11 +7,13 @@
      * @var bool  $fillMarkers ใส่ marker ITEMS_END/BLANKROWS ให้ QuotePdfService เติมแถวว่าง (เฉพาะตารางแรกของเอกสาร)
      * @var string|null $sectionTitle แถบชื่อส่วนเหนือตาราง (เช่น "QT Destination") ไม่ใส่ = ไม่แสดง
      * @var bool  $showNameCn  แสดง Product Name (CN) ใต้ชื่อสินค้า (ฟอร์ม FA-SA-CN)
+     * @var float|null $rowTotal ยอดแถว "ยอดรวม" ท้ายตาราง = ยอดเฉพาะตารางนี้ (ไม่ใส่ = ใช้ $totals['amount'])
      */
     use App\Support\QuoteData as F;
     $fillMarkers = $fillMarkers ?? false;
     $sectionTitle = $sectionTitle ?? null;
     $showNameCn = $showNameCn ?? false;
+    $rowTotal = $rowTotal ?? $totals['amount'];
 @endphp
 
 @if($sectionTitle)
@@ -69,7 +71,8 @@
             <td class="nopad"></td>
             <td class="bd" colspan="2"></td>
             <td class="bd r b f22" colspan="2">{!! $L['row_total'] ?? 'ยอดรวม' !!}</td>
-            <td class="bd r b f22">{{ F::money($totals['amount'], false) }}</td>
+            {{-- ยอดเฉพาะตารางนี้ (ต่างจากกล่องสรุปยอดด้านล่างซึ่งเป็นยอดรวมทั้งใบ) --}}
+            <td class="bd r b f22">{{ F::money($rowTotal, false) }}</td>
             <td class="nopad"></td>
         </tr>
     </tbody>
