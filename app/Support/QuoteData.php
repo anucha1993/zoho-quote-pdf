@@ -403,23 +403,25 @@ class QuoteData implements PrintableRecord
     }
 
     /**
-     * กล่องสรุปยอดท้ายตาราง (ตาม merge field «Quotes.QT …» ของฟอร์ม)
-     * อ่าน field QT_* ก่อน ถ้าไม่มีถอยไปใช้ field มาตรฐานของ Zoho
+     * กล่องสรุปยอดท้ายตาราง QT Thailand = ยอดเฉพาะรายการในตารางนี้
+     * ใช้ field มาตรฐานของ Zoho (Sub_Total / Discount / Tax / Grand_Total ซึ่งคิดจาก Quoted_Items) ก่อน
+     * ไม่ใช้ QT_Total_Amount / QT_Grand_Total เป็นหลัก เพราะใน CRM ฟิลด์ชุดนั้นคือยอดรวมของทั้ง 2 ตาราง
+     * (QT Thailand + QT Destination) จะทำให้ "ยอดรวม" ใต้ตาราง Thailand สูงเกินจริง — ใช้เป็นค่าสำรองเท่านั้น
      */
     public function totalAmount(): float
     {
-        return $this->firstNumber(['QT_Total_Amount', 'Total_Amount', $this->f['sub_total']])
+        return $this->firstNumber([$this->f['sub_total'], 'Total_Amount', 'QT_Total_Amount'])
             ?? round(array_sum(array_column($this->items(), 'total')), 2);
     }
 
     public function totalDiscount(): float
     {
-        return $this->firstNumber(['QT_Total_Discount', 'Total_Discount', $this->f['discount']]) ?? 0.0;
+        return $this->firstNumber([$this->f['discount'], 'Total_Discount', 'QT_Total_Discount']) ?? 0.0;
     }
 
     public function totalTax(): float
     {
-        return $this->firstNumber(['QT_Total_Tax', 'Total_Tax', $this->f['tax']]) ?? 0.0;
+        return $this->firstNumber([$this->f['tax'], 'Total_Tax', 'QT_Total_Tax']) ?? 0.0;
     }
 
     /**
@@ -427,7 +429,7 @@ class QuoteData implements PrintableRecord
      */
     public function grandTotal(): float
     {
-        return $this->firstNumber(['QT_Grand_Total', $this->f['grand_total']])
+        return $this->firstNumber([$this->f['grand_total'], 'QT_Grand_Total'])
             ?? round($this->totalAmount() - $this->totalDiscount() + $this->totalTax(), 2);
     }
 

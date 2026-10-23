@@ -250,8 +250,8 @@ return [
         // สัดส่วนขนาดอักษรจีนเทียบกับข้อความรอบข้าง (SimSun ดูใหญ่กว่า Angsana New) 0.75 = 75%
         'cjk_scale' => (float) env('QUOTE_CJK_SCALE', 0.8),
         // สีพื้นแถบหัวข้อบริการ (FA-SA-TH ชมพู, FA-SA-CN เขียว override ใน forms)
-        // แถบหัวข้อการให้บริการ: พื้นเขียว #A5E088 (อ่อนกว่า #56C222 ที่กำหนด ~50%) (เปลี่ยนได้ที่ QUOTE_SUBJECT_FILL เช่น #CDF065 เขียวมะนาว, #E6B8B7 ชมพู)
-        'subject_fill' => env('QUOTE_SUBJECT_FILL', '#A5E088'),
+        // แถบหัวข้อการให้บริการ: พื้นเขียวมิ้นต์ #A1FDBE ตามภาพตัวอย่างที่กำหนด ใช้ทุกฟอร์ม (เปลี่ยนได้ที่ QUOTE_SUBJECT_FILL เช่น #CDF065 เขียวมะนาว, #E6B8B7 ชมพู)
+        'subject_fill' => env('QUOTE_SUBJECT_FILL', '#A1FDBE'),
         'font_size' => 12,
         // จำนวนแถวรายการขั้นต่ำที่แสดงในตาราง (ต้นแบบมี 3 แถว) — ใช้เมื่อเอกสารจบในหน้าเดียว
         'min_item_rows' => (int) env('QUOTE_MIN_ITEM_ROWS', 0),

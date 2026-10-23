@@ -135,24 +135,34 @@ class QuoteDataTest extends TestCase
         $this->assertSame('IO2026-021617.pdf', $q->filename());
     }
 
-    public function test_totals_box_uses_qt_fields_with_fallbacks(): void
+    public function test_totals_box_uses_thailand_only_fields_not_combined_qt_fields(): void
     {
+        // QT_* ใน CRM = ยอดรวมทั้ง 2 ตาราง (Thailand 9,200 + Destination 6,300) → ตาราง Thailand ต้องใช้ Sub_Total/Grand_Total
         $q = new QuoteData([
-            'QT_Total_Amount' => 19200,
-            'QT_Total_Discount' => 0,
-            'QT_Total_Tax' => 1344,
-            'QT_Grand_Total' => 20544,
-            'Grand_Total' => 99999,
+            'QT_Total_Amount' => 15500,
+            'QT_Total_Tax' => 0,
+            'QT_Grand_Total' => 15500,
+            'Sub_Total' => 9200,
+            'Tax' => 0,
+            'Grand_Total' => 9200,
+            'Total_Amount_D' => 6300,
+            'Grand_Total_D' => 6300,
             'Quoted_Items' => [
-                ['Sequence_Number' => '1', 'Product_Name' => ['name' => 'A'], 'Quantity' => 3, 'List_Price' => 1900, 'Total' => 5700, 'Net_Total' => 5700],
-                ['Sequence_Number' => '2', 'Product_Name' => ['name' => 'B'], 'Quantity' => 3, 'List_Price' => 4500, 'Total' => 13500, 'Net_Total' => 13500],
+                ['Sequence_Number' => '1', 'Product_Name' => ['name' => 'A'], 'Quantity' => 1, 'List_Price' => 1900, 'Total' => 1900, 'Net_Total' => 1900],
+                ['Sequence_Number' => '2', 'Product_Name' => ['name' => 'B'], 'Quantity' => 1, 'List_Price' => 7300, 'Total' => 7300, 'Net_Total' => 7300],
             ],
         ]);
 
-        $this->assertSame(19200.0, $q->totalAmount());
-        $this->assertSame(1344.0, $q->totalTax());
-        $this->assertSame(20544.0, $q->grandTotal());
+        $this->assertSame(9200.0, $q->totalAmount());
+        $this->assertSame(0.0, $q->totalTax());
+        $this->assertSame(9200.0, $q->grandTotal());
+        $this->assertSame(6300.0, $q->destinationTotals()['amount']);
         $this->assertSame([1, 2], array_column($q->items(), 'no'));
+
+        // ไม่มี field มาตรฐาน → ถอยไปใช้ QT_*
+        $qtOnly = new QuoteData(['QT_Total_Amount' => 500, 'QT_Total_Tax' => 35, 'QT_Grand_Total' => 535]);
+        $this->assertSame(500.0, $qtOnly->totalAmount());
+        $this->assertSame(535.0, $qtOnly->grandTotal());
 
         // ไม่มี field QT_* → ถอยไปใช้ field มาตรฐาน / คำนวณจากรายการ
         $fallback = new QuoteData([
