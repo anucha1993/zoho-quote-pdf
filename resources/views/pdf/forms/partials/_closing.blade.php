@@ -31,7 +31,11 @@
             $len = mb_strlen($name) + 4;
             $size = $len > 40 ? round($fs * 40 / $len, 1) : $fs;
 
-            return sprintf('<div class="b" style="font-size: %spt;">(&nbsp;%s&nbsp;)</div>', $size, e($name === '' ? ' ' : $name));
+            // ย่อเฉพาะชื่อใน span ส่วนวงเล็บคงขนาดปกติ → ความสูงบรรทัดเท่าเดิม เส้นลงนาม/ชื่อ/ตำแหน่งทั้ง 3 กล่องอยู่ระดับเดียวกัน
+            return sprintf(
+                '<div class="b">(&nbsp;<span style="font-size: %spt;">%s</span>&nbsp;)</div>',
+                $size, e($name === '' ? ' ' : $name)
+            );
         };
     @endphp
     <table style="page-break-inside: avoid; margin-top: 6pt; margin-bottom: 8pt;">
