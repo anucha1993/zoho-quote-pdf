@@ -122,7 +122,10 @@ class QuotePdfService
         $form ??= QuoteForm::default();
 
         $docOptions = array_merge(config('quote.document'), $form->option('document', []));
-        $docOptions['cjk_font_available'] = $this->cjkFontFile($docOptions) !== null;
+        $cjkFile = $this->cjkFontFile($docOptions);
+        $docOptions['cjk_font_available'] = $cjkFile !== null;
+        // ชื่อฟอนต์ที่เลือกได้จริง (ชื่อเดียว) สำหรับ CSS font-family
+        $docOptions['cjk_font_name'] = $cjkFile !== null ? strtolower(pathinfo($cjkFile, PATHINFO_FILENAME)) : '';
 
         $html = View::make($form->view, [
             'q' => $quote,
@@ -446,11 +449,11 @@ class QuotePdfService
         $defaultConfig = (new ConfigVariables)->getDefaults();
         $defaultFontConfig = (new FontVariables)->getDefaults();
 
-        // ฟอนต์อักษรจีน (ถ้ามีไฟล์): SimSun เป็น TrueType Collection → ใช้ face แรก (TTCfontID = 1)
+        // ฟอนต์อักษรจีน (ถ้ามีไฟล์): KaiTi (simkai.ttf) หรือ SimSun (TrueType Collection → ใช้ face แรก TTCfontID = 1)
         $cjkFont = null;
         $cjkFontData = [];
         if (($cjkFile = $this->cjkFontFile($doc)) !== null) {
-            $cjkFont = $doc['cjk_font'];
+            $cjkFont = strtolower(pathinfo($cjkFile, PATHINFO_FILENAME));
             // mPDF อ่าน TTCfontID แยกตาม style key (R/B/I/BI)
             $cjkFontData[$cjkFont] = str_ends_with(strtolower($cjkFile), '.ttc')
                 ? ['R' => $cjkFile, 'TTCfontID' => ['R' => 1]]
@@ -497,7 +500,7 @@ class QuotePdfService
             // ---- ภาษา/การตัดคำ ----
             'autoScriptToLang' => true,
             'autoLangToFont' => true,
-            'languageToFont' => new ThaiLanguageToFont($font, $cjkFont), // th → ฟอนต์ไทยที่เลือก, อักษรจีน → SimSun
+            'languageToFont' => new ThaiLanguageToFont($font, $cjkFont), // th → ฟอนต์ไทยที่เลือก, อักษรจีน → KaiTi/SimSun
             'useDictionaryLBR' => true,                         // ตัดคำไทยด้วย dictionary ของ mPDF
             'useSubstitutions' => false,
             'shrink_tables_to_fit' => 1,
@@ -510,19 +513,21 @@ class QuotePdfService
     }
 
     /**
-     * ชื่อไฟล์ฟอนต์ CJK ใน resources/fonts (simsun.ttc / <cjk_font>.ttf) — null ถ้าไม่มี
+     * ชื่อไฟล์ฟอนต์ CJK ใน resources/fonts — cjk_font เป็นรายชื่อคั่นด้วย , (เช่น "simkai,simsun") ใช้ตัวแรกที่มีไฟล์
+     * — null ถ้าไม่มีสักตัว
      */
     protected function cjkFontFile(array $doc): ?string
     {
-        $name = (string) ($doc['cjk_font'] ?? '');
+        foreach (explode(',', (string) ($doc['cjk_font'] ?? '')) as $name) {
+            $name = trim($name);
+            if ($name === '') {
+                continue;
+            }
 
-        if ($name === '') {
-            return null;
-        }
-
-        foreach ([$name.'.ttc', $name.'.ttf', $name.'.otf'] as $candidate) {
-            if (is_file(resource_path('fonts/'.$candidate))) {
-                return $candidate;
+            foreach ([$name.'.ttc', $name.'.ttf', $name.'.otf'] as $candidate) {
+                if (is_file(resource_path('fonts/'.$candidate))) {
+                    return $candidate;
+                }
             }
         }
 

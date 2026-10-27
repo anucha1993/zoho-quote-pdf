@@ -438,9 +438,13 @@ class QuotePdfTest extends TestCase
         $pdf = file_get_contents($response->baseResponse->getFile()->getPathname());
 
         $this->assertStringStartsWith('%PDF-', $pdf);
-        // ฟอนต์จีน (SimSun) ถูกฝังเมื่อมีไฟล์ resources/fonts/simsun.ttc
-        if (is_file(resource_path('fonts/simsun.ttc'))) {
-            $this->assertMatchesRegularExpression('/SimSun/i', $pdf);
+        // ภาษาไทยยังใช้ TH Sarabun New (อักษรจีนเท่านั้นที่เปลี่ยนฟอนต์)
+        $this->assertMatchesRegularExpression('/THSarabunNew/i', $pdf);
+        // ฟอนต์จีนแบบ Kai ถูกฝัง (KaiTi ถ้ามี simkai.ttf ไม่งั้น LXGW WenKai)
+        if (is_file(resource_path('fonts/simkai.ttf'))) {
+            $this->assertMatchesRegularExpression('/KaiTi/i', $pdf);
+        } elseif (is_file(resource_path('fonts/lxgwwenkai.ttf'))) {
+            $this->assertMatchesRegularExpression('/LXGWWenKai/i', $pdf);
         }
     }
 

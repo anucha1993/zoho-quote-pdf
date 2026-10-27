@@ -105,7 +105,7 @@ return [
             'view' => 'pdf.forms.fa-sa-thde',
             'texts' => [
                 // แถบชื่อส่วนเหนือตาราง: หน้า 1 = QT Destination, หน้า 2 = QT Thailand
-                'destination_title' => env('QUOTE_DESTINATION_TITLE', 'เงินสำรองจ่าย ค่าใช้จ่ายในการดำเนินงานของเอเจนซี่ประเทศต้นทาง (ประเทศเมียนมา)'),
+                'destination_title' => env('QUOTE_DESTINATION_TITLE', 'เงินสำรองจ่าย ค่าใช้จ่ายในการดำเนินงานของเอเจนซี่ประเทศต้นทาง'),
                 'thailand_title' => env('QUOTE_THAILAND_TITLE', 'ค่าใช้จ่ายในการดำเนินการฝั่งประเทศไทย'),
             ],
         ],
@@ -136,7 +136,7 @@ return [
             'label' => 'ใบเสนอราคา ไทย-จีน + หน้า QT Destination',
             'view' => 'pdf.forms.fa-sa-cnde',
             'texts' => [
-                'destination_title' => 'เงินสำรองจ่าย ค่าใช้จ่ายในการดำเนินงานของเอเจนซี่ประเทศต้นทาง (ประเทศเมียนมา)<br>来源国(缅甸)中介机构运营费用预付款',
+                'destination_title' => 'เงินสำรองจ่าย ค่าใช้จ่ายในการดำเนินงานของเอเจนซี่ประเทศต้นทาง <br>来源国(缅甸)中介机构运营费用预付款',
                 'thailand_title' => 'ค่าใช้จ่ายในการดำเนินการฝั่งประเทศไทย<br>泰国方面办理费用',
             ],
         ]),
@@ -245,10 +245,13 @@ return [
         'font' => env('QUOTE_FONT', 'thsarabunnew'),
         'font_size_pt' => (float) env('QUOTE_FONT_SIZE', 14),
         'heading_size_pt' => (float) env('QUOTE_HEADING_SIZE', 16),
-        // ฟอนต์อักษรจีน (ฟอร์ม FA-SA-CN): SimSun จาก Windows (resources/fonts/simsun.ttc) — ไม่มีไฟล์ = ใช้ค่าเริ่มต้นของ mPDF
-        'cjk_font' => env('QUOTE_CJK_FONT', 'simsun'),
-        // สัดส่วนขนาดอักษรจีนเทียบกับข้อความรอบข้าง (SimSun ดูใหญ่กว่า Angsana New) 0.75 = 75%
-        'cjk_scale' => (float) env('QUOTE_CJK_SCALE', 0.8),
+        // ฟอนต์อักษรจีน (ฟอร์ม FA-SA-CN) แบบ Kai: KaiTi ของ Windows (resources/fonts/simkai.ttf) ถ้ามี
+        // ไม่งั้น LXGW WenKai (lxgwwenkai.ttf, SIL OFL — github.com/lxgw/LxgwWenKai) แล้วค่อย SimSun (simsun.ttc)
+        // — ใช้ตัวแรกที่มีไฟล์, ไม่มีสักตัว = ใช้ค่าเริ่มต้นของ mPDF
+        'cjk_font' => env('QUOTE_CJK_FONT', 'simkai,lxgwwenkai,simsun'),
+        // สัดส่วนขนาดอักษรจีนเทียบกับข้อความรอบข้าง: อักษรจีน SimSun สูง ~0.91em แต่ตัวไทย TH Sarabun New สูง ~0.41em
+        // (ตัวพิมพ์ใหญ่อังกฤษ ~0.48em) → 0.5 = 50% ให้อักษรจีน (~0.45em) สูงพอ ๆ กับตัวไทย
+        'cjk_scale' => (float) env('QUOTE_CJK_SCALE', 0.5),
         // สีพื้นแถบหัวข้อบริการ (FA-SA-TH ชมพู, FA-SA-CN เขียว override ใน forms)
         // แถบหัวข้อการให้บริการ: พื้นเขียว #8ED869 (สรุปจากภาพตัวอย่าง) ใช้ทุกฟอร์ม (เปลี่ยนได้ที่ QUOTE_SUBJECT_FILL เช่น #CDF065 เขียวมะนาว, #E6B8B7 ชมพู)
         'subject_fill' => env('QUOTE_SUBJECT_FILL', '#8ED869'),
