@@ -48,11 +48,13 @@
     .fill-grey { background: #D9D9D9; }
 
     /* อักษรจีนที่ mPDF ตรวจพบ (autoScriptToLang → <span lang="und-Hans" class="lang_und-Hans">) ใช้ฟอนต์ CJK
-       และย่อขนาดลง (cjk_scale) เพราะ SimSun ที่ pt เท่ากันสูงกว่าตัวไทยของ TH Sarabun New เกือบ 2 เท่า */
+       และย่อขนาดลง (cjk_scale) เพราะอักษรจีนที่ pt เท่ากันสูงกว่าตัวไทยของ TH Sarabun New เกือบ 2 เท่า
+       ใช้ขนาด pt ตายตัว ไม่ใช้ % / em: ในบล็อก position:absolute (.closing-pinned) mPDF คิด % ซ้ำ 2 รอบ → ตัวจีนเล็กเหลือ 1/4 */
     @if(!empty($doc['cjk_font_available']))
+    @php $cjk = (float) ($doc['cjk_scale'] ?? 0.5); @endphp
     .lang_und-Hans, .lang_und-Hant, .lang_zh, :lang(und-Hans), :lang(und-Hant), :lang(zh) {
         font-family: '{{ $doc['cjk_font_name'] }}';
-        font-size: {{ (int) round(($doc['cjk_scale'] ?? 0.75) * 100) }}%;
+        font-size: {{ round($fs * $cjk, 1) }}pt;
     }
     @endif
 
