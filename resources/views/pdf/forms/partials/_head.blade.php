@@ -55,6 +55,7 @@
     .lang_und-Hans, .lang_und-Hant, .lang_zh, :lang(und-Hans), :lang(und-Hant), :lang(zh) {
         font-family: '{{ $doc['cjk_font_name'] }}';
         font-size: {{ round($fs * $cjk, 1) }}pt;
+        font-weight: normal; /* อักษรจีนไม่ใช้ตัวหนา แม้อยู่ในช่องป้าย/หัวข้อที่เป็นตัวหนา */
     }
     @endif
 
