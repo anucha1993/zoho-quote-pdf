@@ -142,6 +142,10 @@ class QuotePdfService
             'trackingUrl' => config('quote.show_qr') ? QuoteLink::url($quote->id(), form: $form->slug) : null,
         ])->render();
 
+        if ($docOptions['cjk_font_available']) {
+            $html = $this->tagCjkPunctuation($html);
+        }
+
         $mpdf = $this->makeMpdf($form);
         $mpdf->SetTitle($quote->number());
         $mpdf->SetAuthor(config('quote.company.name_th', ''));
@@ -510,6 +514,20 @@ class QuotePdfService
         $mpdf->SetDisplayMode('fullpage');
 
         return $mpdf;
+    }
+
+    /**
+     * วรรคตอนจีนเต็มความกว้าง (，。：（）【】 ฯลฯ) ไม่ใช่อักษร Han → mPDF autoScriptToLang ไม่ส่งไปฟอนต์จีน
+     * จึงวาดด้วยฟอนต์ไทยขนาดเต็ม (เช่น 16pt) ทำให้บรรทัดจีนบรรทัดนั้นสูงเท่าบรรทัดไทย → ระยะห่างบรรทัดไม่เท่ากัน
+     * ห่อด้วย <span lang="zh"> ให้ใช้ฟอนต์/ขนาดเดียวกับอักษรจีน (กฎ :lang(zh) ใน _head) — แก้เฉพาะข้อความนอก tag
+     */
+    protected function tagCjkPunctuation(string $html): string
+    {
+        return preg_replace_callback('/>([^<]+)</u', fn ($m) => '>'.preg_replace(
+            '/[\x{3000}-\x{303F}\x{FF01}-\x{FF60}]+/u',
+            '<span lang="zh">$0</span>',
+            $m[1]
+        ).'<', $html) ?? $html;
     }
 
     /**

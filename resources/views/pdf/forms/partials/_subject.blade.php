@@ -3,8 +3,10 @@
 <table>
     <tr style="height: 53pt;">
         <td class="nopad" style="width: {{ $wA }}%;"></td>
-        {{-- หัวข้อการให้บริการเป็น rich text จาก CRM → กรองเหลือ tag พื้นฐานแล้ว render --}}
-        <td class="bd b c f24 fill-subject" style="width: {{ 100 - $wA - $wL }}%; height: 53pt;">{!! RichText::inline($q->serviceSubject()) !!}&nbsp;</td>
+        {{-- หัวข้อการให้บริการเป็น rich text จาก CRM → กรองเหลือ tag พื้นฐานแล้ว render
+             &nbsp; ใส่เฉพาะตอนว่าง: ถ้าต่อท้ายข้อความ บรรทัดสุดท้ายที่เป็นภาษาจีนจะสูงเท่าตัวไทย 16pt → ห่างจากบรรทัดก่อนหน้า --}}
+        @php $subjectHtml = RichText::inline($q->serviceSubject()); @endphp
+        <td class="bd b c f24 fill-subject" style="width: {{ 100 - $wA - $wL }}%; height: 53pt;">{!! $subjectHtml !== '' ? $subjectHtml : '&nbsp;' !!}</td>
         <td class="nopad" style="width: {{ $wL }}%;"></td>
     </tr>
     <tr style="height: 19pt;">
