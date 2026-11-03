@@ -11,8 +11,9 @@ namespace App\Support;
  */
 class RichText
 {
-    /** tag ที่อนุญาตในบล็อกข้อความ (เงื่อนไข, รายละเอียด) */
-    private const BLOCK_TAGS = ['b', 'strong', 'i', 'em', 'u', 's', 'strike', 'sub', 'sup', 'br', 'p', 'div', 'ol', 'ul', 'li', 'span'];
+    /** tag ที่อนุญาตในบล็อกข้อความ (เงื่อนไข, รายละเอียด)
+     *  ไม่รับ sub/sup: ใน CRM มักเผลอกดตัวห้อยทั้งย่อหน้า (<sub style="display:inline">) → ข้อความเล็กจิ๋ว เก็บแค่ข้อความ */
+    private const BLOCK_TAGS = ['b', 'strong', 'i', 'em', 'u', 's', 'strike', 'br', 'p', 'div', 'ol', 'ul', 'li', 'span'];
 
     /** tag ที่อนุญาตในข้อความบรรทัดเดียว (หัวข้อ, ชื่อรายการ) */
     private const INLINE_TAGS = ['b', 'strong', 'i', 'em', 'u', 'br', 'span'];

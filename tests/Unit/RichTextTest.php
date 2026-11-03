@@ -30,6 +30,14 @@ class RichTextTest extends TestCase
         );
     }
 
+    public function test_block_drops_subscript_but_keeps_text(): void
+    {
+        // CRM เผลอกดตัวห้อยทั้งย่อหน้า → ต้องแสดงขนาดปกติ
+        $html = '<sub style="display:inline;">1. อัตราค่าบริการ</sub><br>服务费';
+
+        $this->assertSame('1. อัตราค่าบริการ<br />服务费', RichText::block($html));
+    }
+
     public function test_inline_strips_block_tags_and_dangerous_content(): void
     {
         $html = '<p>หัวข้อ</p><script>alert(1)</script><img src=x onerror="x"><a href="http://x" onclick="y">ลิงก์</a>';
