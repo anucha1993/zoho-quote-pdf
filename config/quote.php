@@ -239,9 +239,10 @@ return [
         // ความสูงพื้นที่หัวกระดาษ (ภาพโลโก้/ที่อยู่) ที่ซ้ำทุกหน้า — margin บนของเนื้อหา = margin_top_mm + ค่านี้
         'header_height_mm' => 32,
         // ขอบล่างเผื่อพื้นที่ท้ายกระดาษ (รูป ISO/LINE/QR ตัดขอบขาวแล้วสูง ~25mm + บรรทัดเลขหน้า/รหัสฟอร์ม ~5mm + margin_footer)
-        // margin_footer 8mm: เครื่องพิมพ์ส่วนใหญ่พิมพ์ชิดขอบล่างไม่ได้ (~5mm) — 3mm เดิมพิมพ์จริงแล้วเลขหน้า/รหัสฟอร์มขาด
-        'margin_bottom_mm' => 39,
-        'margin_footer_mm' => 8,
+        // margin_footer 12mm: เครื่องพิมพ์พิมพ์ชิดขอบล่างไม่ได้ — 3mm/8mm พิมพ์จริงแล้วเลขหน้า/รหัสฟอร์มขาด
+        // ปรับคู่กันเสมอ: margin_bottom = 31 + margin_footer (ไม่ให้ท้ายกระดาษทับเนื้อหา)
+        'margin_bottom_mm' => 43,
+        'margin_footer_mm' => 12,
         // ฟอนต์ใบเสนอราคา: TH Sarabun New 14pt (หัวข้อ 16pt) — ตั้ง QUOTE_FONT=angsananew ได้ถ้าต้องการแบบเดิม
         'font' => env('QUOTE_FONT', 'thsarabunnew'),
         'font_size_pt' => (float) env('QUOTE_FONT_SIZE', 14),
