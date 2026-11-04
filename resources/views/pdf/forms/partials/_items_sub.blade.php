@@ -15,7 +15,9 @@
     // "30 บาท (สามสิบบาท)" — ราคาเต็มบาทไม่แสดง .00 และไม่ต้องมี "ถ้วน"
     $rateText = fn (float $price) => number_format($price, fmod($price, 1.0) == 0.0 ? 0 : 2)
         .' บาท ('.preg_replace('/ถ้วน$/u', '', BahtText::convert($price)).')';
-    $rateUnit = $texts['rate_unit'] ?? '';
+    // ค่าสำรองกรณี config ยังไม่มี forms.FA-SA-SUB (เช่น config cache บนเซิร์ฟเวอร์ยังเป็นชุดเก่า) — ไม่ให้ 500
+    $colRate = $L['col_rate'] ?? 'อัตราค่าบริการ<br><span style="font-weight: normal;">Service Rate</span>';
+    $rateUnit = $texts['rate_unit'] ?? 'ต่อคน / ต่อวัน';
     $condition = trim((string) ($texts['rate_condition'] ?? ''));
 @endphp
 
@@ -25,7 +27,7 @@
         <td class="nopad" style="width: {{ $wA }}%;"></td>
         <td class="bd b c f15 fill-subject" style="width: {{ $wB }}%;">{!! $L['col_no'] !!}</td>
         <td class="bd b c f15 fill-subject" style="width: {{ $tCH }}%;">{!! $L['col_desc'] !!}</td>
-        <td class="bd b c f15 fill-subject" colspan="2" style="width: {{ $tSum }}%;">{!! $L['col_rate'] !!}</td>
+        <td class="bd b c f15 fill-subject" colspan="2" style="width: {{ $tSum }}%;">{!! $colRate !!}</td>
         <td class="nopad" style="width: {{ $wL }}%;"></td>
     </tr>
     </thead>
