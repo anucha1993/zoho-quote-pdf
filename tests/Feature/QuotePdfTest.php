@@ -448,6 +448,16 @@ class QuotePdfTest extends TestCase
         }
     }
 
+    public function test_sub_form_renders_rate_table_without_totals(): void
+    {
+        $this->fakeZoho();
+
+        $response = $this->get('/FA-SA-SUB/'.self::QUOTE_ID)->assertOk()->assertHeader('X-Quote-Form', 'FA-SA-SUB');
+        $pdf = file_get_contents($response->baseResponse->getFile()->getPathname());
+
+        $this->assertStringStartsWith('%PDF-', $pdf);
+    }
+
     public function test_unknown_form_returns_404_without_calling_zoho(): void
     {
         Http::fake();

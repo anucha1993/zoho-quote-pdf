@@ -109,6 +109,22 @@ return [
                 'thailand_title' => env('QUOTE_THAILAND_TITLE', 'ค่าใช้จ่ายในการดำเนินการฝั่งประเทศไทย'),
             ],
         ],
+        // ฟอร์มค่าบริการดูแลพนักงาน (คิดเป็นอัตราต่อคน/ต่อวัน) — เหมือน FA-SA-TH แต่ตารางรายการไม่มีจำนวน/จำนวนเงิน/สรุปยอด
+        'FA-SA-SUB' => [
+            'label' => 'ใบเสนอราคา ค่าบริการดูแล (อัตราต่อคน/ต่อวัน)',
+            'view' => 'pdf.forms.fa-sa-sub',
+            'labels' => [
+                'col_no' => 'ลำดับที่<br><span style="font-weight: normal;">Items</span>',
+                'col_desc' => 'จำนวนพนักงานต่างด้าว (คน)<br><span style="font-weight: normal;">Quantity of the worker</span>',
+                'col_rate' => 'อัตราค่าบริการ<br><span style="font-weight: normal;">Service Rate</span>',
+            ],
+            'texts' => [
+                // หน่วยของอัตราค่าบริการ (ช่องขวาของ "อัตราค่าบริการ")
+                'rate_unit' => 'ต่อคน / ต่อวัน',
+                // แถวเงื่อนไขใต้ตารางรายการ (HTML) — ว่าง = ไม่แสดงแถวนี้
+                'rate_condition' => '<u>เงื่อนไขการคิดค่าบริการดูแล</u> : คิดเฉพาะวันที่พนักงานต่างด้าวทำงานจริง ตามจำนวนพนักงานต่างด้าวที่ให้บริการดูแล',
+            ],
+        ],
         // ---- ฟอร์มของ module Deals (ใบงาน) — URL: /TRACKING/{deal id} ----
         'TRACKING' => [
             'label' => 'Deal Information & Tracking (ใบงาน)',
