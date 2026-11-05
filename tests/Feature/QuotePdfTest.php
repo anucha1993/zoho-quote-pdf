@@ -386,6 +386,7 @@ class QuotePdfTest extends TestCase
             'field3' => 10, 'field2' => 5, 'field5' => 15, 'field48' => ['เมียนมา'],
             'field55' => 1000, 'field57' => 15000, 'field54' => 2000, 'field56' => 30000,
             'field59' => ['ตรวจ 6 โรค'], 'field60' => ['6 เดือน'],
+            'field64' => 'ทั้งสองรูปแบบ',
             'field50' => 'ปิยนุช', 'field51' => 'จันทร์วงค์',
             'ISO' => ['id' => '1', 'name' => 'FA-SA-02-100'],
             'Tracking_System' => [

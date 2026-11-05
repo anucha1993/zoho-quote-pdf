@@ -62,6 +62,7 @@ return [
         'employer_cost_total' => 'field56',   // ค่าใช้จ่ายนายจ้างรวม
         'health_check' => 'field59',          // การตรวจสุขภาพแรงงาน
         'health_insurance' => 'field60',      // ซื้อประกันสุขภาพ (เพิ่มเติม)
+        'document_return' => 'field64',       // รูปแบบการส่งคืนเอกสารให้ลูกค้า / แรงงาน (picklist)
         'remark' => 'Description',            // หมายเหตุ (ไม่มี field ชื่อ "หมายเหตุ" ใน Deals → ใช้ Description)
         'remark_fallback' => 'field58',       // บันทึกฝ่ายขาย
         'opener_first_name' => 'field50',     // ชื่อจริง (ผู้เปิดใบงาน)

@@ -184,6 +184,12 @@ class DealData implements PrintableRecord
         return $this->text($this->f['health_insurance'] ?? 'field60');
     }
 
+    /** รูปแบบการส่งคืนเอกสารให้ลูกค้า / แรงงาน (ไฟล์อิเล็กทรอนิกส์ / เอกสารกระดาษ / ทั้งสองรูปแบบ) */
+    public function documentReturn(): string
+    {
+        return $this->text($this->f['document_return'] ?? 'field64');
+    }
+
     /** หมายเหตุ: Description (ถ้าว่างใช้ บันทึกฝ่ายขาย) */
     public function remark(): string
     {

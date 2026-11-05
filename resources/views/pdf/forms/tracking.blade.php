@@ -44,6 +44,7 @@
         <tr><td class="k">แรงงานสัญชาติ :</td><td class="v">{{ $q->nationality() }}</td><td class="k">ค่าใช้จ่ายแรงงานรวม :</td><td class="v">{{ $q->workerCostTotal() }}</td></tr>
         <tr><td class="k">ค่าใช้จ่ายแรงงาน :</td><td class="v">{{ $q->workerCostPerPerson() }}</td><td class="k">การตรวจสุขภาพแรงงานต่างด้าว :</td><td class="v">{{ $q->healthCheck() }}</td></tr>
         <tr><td class="k">หมายเหตุ :</td><td class="v">{{ $q->remark() }}</td><td class="k">ซื้อประกันสุขภาพ (เพิ่มเติม) :</td><td class="v">{{ $q->healthInsurance() }}</td></tr>
+        <tr><td class="k">รูปแบบการส่งคืนเอกสาร<br>ให้ลูกค้า / แรงงาน :</td><td class="v" colspan="3">{{ $q->documentReturn() }}</td></tr>
     </table>
 
     {{-- ตาราง Tracking System --}}
